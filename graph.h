@@ -76,6 +76,7 @@ void FreeList(LIST **);
  NODE Structure Functions
 ****************************************************************************************************************************/
 int ReadIsc(FILE *,NODE *);
+int readBench(FILE *,NODE *);
 void InitializeCircuit(NODE *,int);
 int AssignType(char *);
 void PrintCircuit(NODE *,int);
