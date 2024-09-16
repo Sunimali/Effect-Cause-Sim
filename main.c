@@ -1,10 +1,11 @@
 #include "graph.h"
+#include "user.h"
 /***************************************************************************************************************************
  Main Function(Serial and Parallel Fault Simulation)
 ****************************************************************************************************************************/
 void main(int argc,char **argv)
 {
-FILE *fisc,*fvec,*ffau,*fres,*fbench;             //file pointers used for .isc file, .vec file, .faults file and resultfile
+FILE *fisc,*fvec,*ffau,*fres,*fbench,*fbenchout;             //file pointers used for .isc file, .vec file, .faults file and resultfile
 int Max,Opt,Npi,Npo,Total,Tfs;              //maxnode id,option,tot no of PIs,tot no of Pos,Tot no of input patterns& faults in.vec in.faults
 
 NODE graph[Mnod]; 
@@ -30,7 +31,9 @@ fbench=fopen(argv[2],"r");
 Max = readBench(fbench, graphB);
 PrintCircuit(graphB,Max); 
 
- 
+fbenchout=fopen(argv[3],"w"); 
+writeBenchmarkFile(Max, graphB, fbenchout);
+fclose(fbenchout);
 
 //Opt=0; 
 //Opt=atoi(argv[3]);                          //getting the option from terminal for xval

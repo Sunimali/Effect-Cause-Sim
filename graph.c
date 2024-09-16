@@ -287,7 +287,7 @@ int readBench(FILE *fbench, NODE *graph)
 	}
 
 	while (fgets(line, Mlin, fbench)){
-		printf("%s\n", line);
+
 		if (line[0] == '#') {//skip comments
 			continue;
 		}
