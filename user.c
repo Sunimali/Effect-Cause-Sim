@@ -112,7 +112,8 @@ int createDuplicateGraph(NODE* graph, NODE* graphDup, int max) {
 
     int i;
     int count = 0;
-    int oldToNewNodes[max + 1]; // Declare the array
+    int oldToNewNodes[max + 1]; // Declare the array to store the mapping of old nodes to new nodes
+    int poCount = 0;
 
     // Initialize all elements to 0
     for (i = 0; i <= max; i++) {
@@ -127,16 +128,18 @@ int createDuplicateGraph(NODE* graph, NODE* graphDup, int max) {
     int j = 1;
     for (i = 1; i <= max; i++)
     {
-        if (graph[i].Type == 1)
-        {
+        if(graph[i].Po == 1){
+            poCount = poCount + 1;
+        }
+        if (graph[i].Type == 1){ //copy primary inputs
             graphDup[j] = graph[i];
             oldToNewNodes[i] = j;
             count = count + 1;
             j++;
-        } else if (graph[i].Type == 0)
-        {
+
+        } else if (graph[i].Type == 0){ //skip unknown nodes
             continue;
-        } else {
+        } else { //copy the rest of the nodes
             graphDup[j] = graph[i];
             graphDup[j + 1] = graph[i];
             deepCopyNode(&graphDup[j], &graph[i]);
@@ -146,16 +149,46 @@ int createDuplicateGraph(NODE* graph, NODE* graphDup, int max) {
 
             count = count + 2;
             j = j + 2;
-    
+
         }
     }
     //update fanin and fanout lists
     updateFanInFanOut(graph, graphDup, max, count, oldToNewNodes);
 
-    //connect xor gates to the new primary outputs
+    //xor gates count
+    int xorCount = poCount;
+   
+    // add or gate to combine the xor gates
+    int final = count + xorCount + 1; //final node count
 
+    //add or gate PO to combine the xor gates
+    graphDup[final].Type = AssignType("OR");
+ 
 
-    return count;
+    for(j = 1; j <= count; j++){
+        //add xor gates
+        if(graphDup[j].Po == 1){
+           
+            graphDup[count+1].Type = AssignType("XOR");
+            InsertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
+            InsertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
+            InsertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
+
+            graphDup[j].Po = 0; //set primary output to 0
+            graphDup[j+1].Po = 0;
+            InsertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
+            InsertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
+
+            InsertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
+
+            count = count + 1; //increment count
+
+            j = j + 1;
+        }
+    }
+    graphDup[final].Po = 1; //set primary output to 1 in or gate
+
+    return final;
 }
 // end of createDuplicateGraph
 
@@ -218,6 +251,11 @@ void updateFanInFanOut(NODE* graph, NODE* graphDup, int max, int count, int newN
         }
     }
 }
+// end of updateFanInFanOut
+
+/***************************************************************************************************************************
+ * deep copy of a node
+ * ****************************************************************************************************************************/
 
 void deepCopyNode(NODE* dest, NODE* src) {
     //deep copy fot
@@ -256,4 +294,13 @@ void deepCopyNode(NODE* dest, NODE* src) {
     } else {
         dest->Fin = NULL;
     }
+}
+// end of deepCopyNode
+
+/***************************************************************************************************************************
+ * Add xor components to the graph
+ * ****************************************************************************************************************************/
+
+void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
+    
 }
