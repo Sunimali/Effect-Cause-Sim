@@ -15,7 +15,9 @@ Header Files
 /***************************************************************************************************************************
  * Function Declarations
  * ****************************************************************************************************************************/
-int createDuplicateGraph(NODE *graph, NODE *graphDup);
+int createDuplicateGraph(NODE *graph, NODE *graphDup, int max);
 int writeBenchmarkFile(int max, NODE *graph, FILE *fbench);
 void printNameFromTypeId(int type, FILE *fbench);
 void printFanInList(LIST *Fin, FILE *fbench);
+void updateFanInFanOut(NODE *graph, NODE *graphDup, int max, int count, int newNodes[]);
+void deepCopyNode(NODE* dest, NODE* src);

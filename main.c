@@ -15,6 +15,7 @@ NODE graph[Mnod];
 //FAULT stuck[Mft];                      //structure used to store the faults information in .faults file
 int a,b,c,d;                             //random variables
 NODE graphB[Mnod]; 
+NODE graphDup[Mnod]; 
 
 //Read the .isc file and store the information in graph structure
 fisc=fopen(argv[1],"r");                           //file pointer to open .isc file 
@@ -34,6 +35,11 @@ PrintCircuit(graphB,Max);
 fbenchout=fopen(argv[3],"w"); 
 writeBenchmarkFile(Max, graphB, fbenchout);
 fclose(fbenchout);
+
+printf("call createDuplicateGraph\n");
+int count = createDuplicateGraph(graphB, graphDup, Max);
+printf("count = %d\n", count);
+PrintCircuit(graphDup,count);
 
 //Opt=0; 
 //Opt=atoi(argv[3]);                          //getting the option from terminal for xval

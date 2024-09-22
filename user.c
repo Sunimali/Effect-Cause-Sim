@@ -103,3 +103,124 @@ void printFanInList(LIST *Fin, FILE *fbench){
     }
 }
 // end of printFanInList
+
+/***************************************************************************************************************************
+ * create a duplicate graph
+ * ****************************************************************************************************************************/
+
+int createDuplicateGraph(NODE *graph, NODE *graphDup, int max){
+    
+    int i;
+    int count = 0;
+    int oldToNewNodes[max+1]; // Declare the array
+
+    // Initialize all elements to 0
+    for (i = 0; i <= max; i++) {
+        oldToNewNodes[i] = 0;
+    }
+    // intialize all nodes in graph structure
+	for (i = 0; i < Mnod; i++)
+	{
+		InitializeCircuit(graphDup, i);
+	}
+  
+    int j = 1;
+    for(i = 1; i <= max; i++)
+    {
+        if(graph[i].Type == 1)
+        {
+            graphDup[j] = graph[i];
+            oldToNewNodes[i] = j;
+            count = count + 1;
+            j++;
+        }
+        else if(graph[i].Type == 0)
+        {
+            continue;
+        }   
+        else{
+            graphDup[j] = graph[i];
+            graphDup[j+1] = graph[i];
+            deepCopyNode(&graphDup[j], &graph[i]);
+            deepCopyNode(&graphDup[j+1], &graph[i]);
+            
+            oldToNewNodes[i] = j;
+
+            count = count + 2;
+            j = j + 2;
+        }         
+    }
+    //update fanin and fanout lists
+    updateFanInFanOut(graph, graphDup, max, count, oldToNewNodes);
+    
+    return count; 
+}
+// end of createDuplicateGraph
+
+/***************************************************************************************************************************
+ * update fanin and fanout lists
+ * ****************************************************************************************************************************/
+
+void updateFanInFanOut(NODE *graph, NODE *graphDup, int max, int count, int newNodes[]){
+    int i;
+    for(i = 1; i <= count; i++)
+    {
+        if(graphDup[i].Type == 0)
+        {
+            continue;
+        }
+        else
+        {
+            //update fanin list
+            for(LIST *temp = graphDup[i].Fin; temp != NULL; temp = temp->next)
+            {
+                temp->id = newNodes[temp->id];
+            }
+    
+            //update fanout list
+            for(LIST *temp = graphDup[i].Fot; temp != NULL; temp = temp->next)
+            {
+                temp->id = newNodes[temp->id];
+            }
+        }
+    }
+}
+
+void deepCopyNode(NODE* dest, NODE* src) {
+    //deep copy fot
+     if (src->Fot != NULL) {
+        dest->Fot = malloc(sizeof(LIST));
+        LIST* srcTemp = src->Fot;
+        LIST* destTemp = dest->Fot;
+        while (srcTemp != NULL) {
+            destTemp->id = srcTemp->id;
+            if (srcTemp->next != NULL) {
+                destTemp->next = malloc(sizeof(LIST));
+            } else {
+                destTemp->next = NULL;
+            }
+            srcTemp = srcTemp->next;
+            destTemp = destTemp->next;
+        }
+    } else {
+        dest->Fot = NULL;
+    }
+    //deep copy fin
+    if (src->Fin != NULL) {
+        dest->Fin = malloc(sizeof(LIST));
+        LIST* srcTemp = src->Fin;
+        LIST* destTemp = dest->Fin;
+        while (srcTemp != NULL) {
+            destTemp->id = srcTemp->id;
+            if (srcTemp->next != NULL) {
+                destTemp->next = malloc(sizeof(LIST));
+            } else {
+                destTemp->next = NULL;
+            }
+            srcTemp = srcTemp->next;
+            destTemp = destTemp->next;
+        }
+    } else {
+        dest->Fin = NULL;
+    }
+}
