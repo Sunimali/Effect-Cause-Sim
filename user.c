@@ -160,34 +160,7 @@ int createDuplicateGraph(NODE* graph, NODE* graphDup, int max) {
    
     // add or gate to combine the xor gates
     int final = count + xorCount + 1; //final node count
-
-    //add or gate PO to combine the xor gates
-    graphDup[final].Type = AssignType("OR");
- 
-
-    for(j = 1; j <= count; j++){
-        //add xor gates
-        if(graphDup[j].Po == 1){
-           
-            graphDup[count+1].Type = AssignType("XOR");
-            InsertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
-            InsertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
-            InsertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
-
-            graphDup[j].Po = 0; //set primary output to 0
-            graphDup[j+1].Po = 0;
-            InsertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
-            InsertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
-
-            InsertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
-
-            count = count + 1; //increment count
-
-            j = j + 1;
-        }
-    }
-    graphDup[final].Po = 1; //set primary output to 1 in or gate
-
+    addXorComponents(graphDup, count, xorCount, final);
     return final;
 }
 // end of createDuplicateGraph
@@ -302,5 +275,31 @@ void deepCopyNode(NODE* dest, NODE* src) {
  * ****************************************************************************************************************************/
 
 void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
-    
+    //add or gate PO to combine the xor gates
+    graphDup[final].Type = AssignType("OR");
+ 
+    int j;
+    for(j = 1; j <= count; j++){
+        //add xor gates
+        if(graphDup[j].Po == 1){
+           
+            graphDup[count+1].Type = AssignType("XOR");
+            InsertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
+            InsertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
+            InsertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
+
+            graphDup[j].Po = 0; //set primary output to 0
+            graphDup[j+1].Po = 0;
+            InsertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
+            InsertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
+
+            InsertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
+
+            count = count + 1; //increment count
+
+            j = j + 1;
+        }
+    }
+    graphDup[final].Po = 1; //set primary output to 1 in or gate
 }
+// end of addXorComponents

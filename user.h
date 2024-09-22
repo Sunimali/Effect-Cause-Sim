@@ -21,3 +21,4 @@ void printNameFromTypeId(int type, FILE *fbench);
 void printFanInList(LIST *Fin, FILE *fbench);
 void updateFanInFanOut(NODE *graph, NODE *graphDup, int max, int count, int newNodes[]);
 void deepCopyNode(NODE* dest, NODE* src);
+void addXorComponents(NODE* graphDup, int count, int xorCount, int final) ;
