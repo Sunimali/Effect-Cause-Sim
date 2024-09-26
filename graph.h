@@ -15,7 +15,7 @@ Header Files
 Constant Declarations 
 ****************************************************************************************************************************/
 // VARIOUS CONSTANTS
-#define Mfnam      20			// max size for a file name
+#define Mfnam      256			// max size for a file name
 #define Mnod    15000 		        // max number of nodes in a graph/node
 #define Mlin      200			// max size of characters in a line
 #define Mnam       25			// max size of a node name

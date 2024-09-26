@@ -1,5 +1,7 @@
 #include "graph.h"
 #include "user.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 /***************************************************************************************************************************
  * write netlist into a BenchmarkFile
@@ -108,11 +110,11 @@ void printFanInList(LIST* Fin, FILE* fbench) {
  * create a duplicate graph
  * ****************************************************************************************************************************/
 
-int createDuplicateGraph(NODE* graph, NODE* graphDup, int max) {
+int createDuplicateGraph(NODE* graph, NODE* graphDup, int max, int oldToNewNodes[]) {
 
     int i;
     int count = 0;
-    int oldToNewNodes[max + 1]; // Declare the array to store the mapping of old nodes to new nodes
+     // Declare the array to store the mapping of old nodes to new nodes
     int poCount = 0;
 
     // Initialize all elements to 0
@@ -303,3 +305,109 @@ void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
     graphDup[final].Po = 1; //set primary output to 1 in or gate
 }
 // end of addXorComponents
+
+/***************************************************************************************************************************
+ * fault injection
+ * ****************************************************************************************************************************/
+
+void faultInjection(NODE* graphDup, NODE* graph, int count, int max, int oldTonew[], char* fname){
+    int i;
+
+   // Create a directory with the given circuit name
+    struct stat st = {0};
+    if (stat(fname, &st) == -1) {
+        mkdir(fname, 0700); // Create directory with read/write/execute permissions for the owner
+    }
+
+    for (i = 1; i <= max; i++)
+    {
+        int newId = oldTonew[i]; //get the new id of the node
+        if (graphDup[newId].Type == 1){ //skip primary inputs
+            continue;
+        } else if (graphDup[newId].Type == 0){ //skip unknown nodes
+        
+            continue;
+        } else {
+            char fileName[Mfnam]; // Buffer to hold the file name
+            
+            if (graphDup[newId].Type == 9){ //convert inverter to buffer 
+
+                // create a graph with buffer add error to the node
+                graphDup[newId].Type = 8;
+
+                // write bechmark file with error
+                sprintf(fileName, "%s/%s_%dNOT_to_BUFF.bench", fname, fname, newId);
+                FILE* fbench = fopen(fileName, "w");
+                writeBenchmarkFile(max, graphDup, fbench);
+                fclose(fbench);
+
+                graphDup[newId].Type = 9; // change the gragh to error free
+            } else if (graphDup[newId].Type == 8){ //convert buffer to inverter
+               
+                graphDup[newId].Type = 9; // add error to the node
+
+                sprintf(fileName, "%s/%s_%dBUFF_to_NOT.bench",fname, fname, newId);
+                FILE* fbench = fopen(fileName, "w");
+                writeBenchmarkFile(max, graphDup, fbench);
+                fclose(fbench);
+
+                graphDup[newId].Type = 8; // change the gragh to error free
+            } else {
+                // create file for each node types
+                convertType(graphDup, max, graphDup[newId].Type, newId, fname);
+            }
+        }
+    }
+}
+// end of faultInjection
+
+/***************************************************************************************************************************
+ * convert the type of the node
+ * ****************************************************************************************************************************/
+
+void convertType(NODE* graph, int max, int typeId, int i, char* fname) {
+    int j;
+    char* type = typeToString(typeId);
+    const char* types[] = { "AND", "NAND", "OR", "NOR", "XOR", "XNOR" };
+    int len = 6 ;
+    printf("len %d\n", len);
+    char fileName[Mfnam]; // Buffer to hold the file name
+
+    for( j = 0; j < len; j++){
+        if (type == types[j]){
+            continue;
+        } else {
+            sprintf(fileName, "%s/%s_%d_%sto_%s.bench", fname,fname, i, type, types[j]);
+            FILE* fbench = fopen(fileName, "w");
+            graph[i].Type = AssignType(types[j]); // add error to the node
+
+            // write bechmark file with error
+            writeBenchmarkFile(max, graph, fbench);
+            fclose(fbench);
+            graph[i].Type = AssignType(type); // change the gragh to error free
+        } 
+    }
+}
+
+// end of convertType
+
+/***************************************************************************************************************************
+ * convert the type of the node to string
+ * ****************************************************************************************************************************/
+
+const char* typeToString(int type) {
+    switch (type) {
+        case INPT: return "INPT";
+        case BUFF: return "BUFF";
+        case NOT: return "NOT";
+        case AND: return "AND";
+        case NAND: return "NAND";
+        case OR: return "OR";
+        case NOR: return "NOR";
+        case XOR: return "XOR";
+        case XNOR: return "XNOR";
+        case FROM: return "FROM";
+        default: return "UNKNOWN";
+    }
+}
+// end of typeToString
