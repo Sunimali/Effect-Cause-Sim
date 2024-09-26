@@ -95,7 +95,8 @@ void printNameFromTypeId(int type, FILE* fbench)
  * ****************************************************************************************************************************/
 
 void printFanInList(LIST* Fin, FILE* fbench) {
-    for (LIST* temp = Fin; temp != NULL; temp = temp->next)
+    LIST* temp;
+    for (temp = Fin; temp != NULL; temp = temp->next)
     {
         fprintf(fbench, "%d", temp->id);
         if (temp->next != NULL)
@@ -175,6 +176,7 @@ void updateFanInFanOut(NODE* graph, NODE* graphDup, int max, int count, int newN
     int i;
     int changeFin = 0;
     int changeFot = 0;
+    LIST* temp;
     for (i = 1; i <= count; i++)
     {
         if (graphDup[i].Type == 0) //skip unknown nodes
@@ -183,7 +185,7 @@ void updateFanInFanOut(NODE* graph, NODE* graphDup, int max, int count, int newN
         } else
         {
             //update fanin list
-            for (LIST* temp = graphDup[i].Fin; temp != NULL; temp = temp->next) {
+            for (temp = graphDup[i].Fin; temp != NULL; temp = temp->next) {
                 if (changeFin == 0) { //check if the nodes are original or duplicate
                     temp->id = newNodes[temp->id];
 
@@ -205,7 +207,7 @@ void updateFanInFanOut(NODE* graph, NODE* graphDup, int max, int count, int newN
             }
 
             //update fanout list            
-            for (LIST* temp = graphDup[i].Fot; temp != NULL; temp = temp->next) {
+            for (temp = graphDup[i].Fot; temp != NULL; temp = temp->next) {
                 if (changeFot == 0) //check if the nodes are original or duplicate
                 {
                     temp->id = newNodes[temp->id];
