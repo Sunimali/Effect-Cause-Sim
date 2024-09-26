@@ -411,3 +411,28 @@ const char* typeToString(int type) {
     }
 }
 // end of typeToString
+
+/***************************************************************************************************************************
+ * create fault file
+ * ****************************************************************************************************************************/
+
+void createFaultFile(int max, char* fname) {
+    int i;
+    char fileName[Mfnam]; // Buffer to hold the file name
+   
+    sprintf(fileName, "%s/%s.fault", fname, fname);
+    FILE* fbench = fopen(fileName, "w");
+
+    fprintf(fbench, "%d /0\n", max);
+    fclose(fbench);
+   
+}
+// end of createFaultFile
+/***************************************************************************************************************************
+ * execute atlanta
+ * ****************************************************************************************************************************/
+
+void executeAltanta() {
+    system("atlanta -f atlanta.cmd");
+    
+}

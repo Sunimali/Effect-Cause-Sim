@@ -26,3 +26,5 @@ void addXorComponents(NODE* graphDup, int count, int xorCount, int final) ;
 void faultInjection(NODE* graphDup, NODE* graph, int count, int max, int oldTonew[], char* fname);
 void convertType(NODE* graph, int max, int typeId, int i, char* fname);
 const char* typeToString(int type);
+void createFaultFile(int max, char* fname);
+void executeAltanta();
