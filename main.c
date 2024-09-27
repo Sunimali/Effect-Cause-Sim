@@ -48,13 +48,22 @@ char* fname[Mfnam];
 strncpy(fname, argv[3], Mfnam - 1);
 printf("call faultInjection\n");
 printf("fname = %s\n", fname);
-faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
+// faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
 
-//create fault file
-createFaultFile(count, fname);
-// executeAltanta(fname);
-processBenchFiles(fname);
-
+// //create fault file
+// createFaultFile(count, fname);
+// // executeAltanta(fname);
+// processBenchFiles(fname);
+FILE *ftest;
+// //read the .test file and store the information in  vector structure
+printf("call readTestFile\n");
+ftest = fopen("c17/c17_6_NANDto_AND.test", "r");
+printf("open file\n");
+PatternData* patterns[MAX_PATTERNS];
+int numPatterns;
+int capacity;
+numPatterns = readTestFile(ftest, patterns);
+fclose(ftest);
 //Opt=0; 
 //Opt=atoi(argv[3]);                          //getting the option from terminal for xval
 //fres=fopen(argv[2],"w");                           //file pointer to open .out file for printing results

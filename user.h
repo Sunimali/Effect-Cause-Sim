@@ -12,6 +12,16 @@ Header Files
 #include <assert.h>
 #include <limits.h>
 
+/***************************************************************************************************************************
+ * Constants
+ * ****************************************************************************************************************************/
+#define MAX_PATTERNS 1000
+
+typedef struct {
+    char pattern[Mlin];
+    int faultFreeVal;
+} PatternData;
+
 
 /***************************************************************************************************************************
  * Function Declarations
@@ -29,3 +39,5 @@ const char* typeToString(int type);
 void createFaultFile(int max, char* fname);
 void executeAltanta(char* fname, char* benchName);
 void processBenchFiles(char* fname);
+int readTestFile( FILE* ftest, PatternData* patterns);
+void createTestPatternFile(char* fname, int maxPat);

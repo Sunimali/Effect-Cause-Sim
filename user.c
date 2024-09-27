@@ -481,3 +481,55 @@ void processBenchFiles(char* fname) {
     closedir(dp);
 }
 // end of processBenchFiles
+
+/***************************************************************************************************************************
+ * read test file
+ * ****************************************************************************************************************************/
+
+int readTestFile( FILE* ftest, PatternData* patterns) {
+    //read the .test file and store the information in  array structure
+
+	char line[Mlin];
+    int patternsStart = 0;
+    int numPatterns = 0; //number of patterns
+
+	
+	while (fgets(line, Mlin, ftest)){
+
+		if (line[0] == '*') {//skip comments
+			continue;
+		} else if (line[0] == '\n'){ //skip empty lines
+            continue;
+        }else if (strchr(line, '/') != NULL){ // fault/stuk at 0/1
+            patternsStart = 1;
+            continue;
+        }else if(patternsStart == 1){ //read the test patterns    
+            char pattern[Mlin];
+            int faultFreeVal;
+            sscanf(line, " : %s %d", pattern, &faultFreeVal); // Extract the pattern and fault-free value
+            numPatterns = numPatterns + 1;
+    
+            patterns[numPatterns].faultFreeVal = faultFreeVal;
+            strcpy(patterns[numPatterns].pattern, pattern);
+  
+        } else {
+            continue;
+            //store the information in the array
+        }	
+	}
+  
+    return numPatterns;
+    //read the .test file and store the information in  vector structure
+}
+// end of readTestFile
+
+/***************************************************************************************************************************
+ * create test pattern file
+ * ****************************************************************************************************************************/
+
+void createTestPatternFile(char* fname, int maxPat){
+    
+
+    //read the .test file and store the information in  vector structure
+}
+// end of createTestPatternFile
