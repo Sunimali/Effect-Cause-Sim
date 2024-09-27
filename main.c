@@ -50,6 +50,11 @@ printf("call faultInjection\n");
 printf("fname = %s\n", fname);
 faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
 
+//create fault file
+createFaultFile(count, fname);
+// executeAltanta(fname);
+processBenchFiles(fname);
+
 //Opt=0; 
 //Opt=atoi(argv[3]);                          //getting the option from terminal for xval
 //fres=fopen(argv[2],"w");                           //file pointer to open .out file for printing results

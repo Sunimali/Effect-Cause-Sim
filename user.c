@@ -2,7 +2,10 @@
 #include "user.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 /***************************************************************************************************************************
  * write netlist into a BenchmarkFile
  * ****************************************************************************************************************************/
@@ -430,11 +433,51 @@ void createFaultFile(int max, char* fname) {
    
 }
 // end of createFaultFile
+
 /***************************************************************************************************************************
  * execute atlanta
  * ****************************************************************************************************************************/
 
-void executeAltanta() {
-    system("atlanta -f atlanta.cmd");
-    
+void executeAltanta(char* fname, char* benchName) {
+    char* benchFile [Mfnam];
+    sprintf(benchFile, "%s/%s", fname, benchName);
+    char* faultFile [Mfnam];
+    sprintf(faultFile, "%s/%s.fault", fname, fname);
+    char* outputFile [Mfnam];
+    //remove the .bench extension
+    benchName[strlen(benchName) - 6] = '\0';
+    sprintf(outputFile, "%s/%s.test", fname, benchName);
+
+    //build the command to execute atlanta > /path/to/output_directory/output.test
+    char command[256];                  
+    snprintf(command, sizeof(command), "/opt/net/apps/atalanta/atalanta -A -f %s -t %s %s", faultFile, outputFile, benchFile);
+    printf("command = %s\n", command);
+    //pass the command to the system
+    system(command);
+
 }
+// end of executeAltanta
+/***************************************************************************************************************************
+ * process bench files
+ * ****************************************************************************************************************************/
+
+void processBenchFiles(char* fname) {
+    struct dirent* entry;
+    DIR* dp = opendir(fname);
+
+    if (dp == NULL) {
+        perror("opendir");
+        return;
+    }
+
+    while ((entry = readdir(dp))) {
+        //read onyl .bench files
+        if (strstr(entry->d_name, ".bench") != NULL) {
+            
+            //execute atlanta
+            executeAltanta(fname, entry->d_name);
+        }
+    }
+    closedir(dp);
+}
+// end of processBenchFiles

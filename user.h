@@ -27,4 +27,5 @@ void faultInjection(NODE* graphDup, NODE* graph, int count, int max, int oldTone
 void convertType(NODE* graph, int max, int typeId, int i, char* fname);
 const char* typeToString(int type);
 void createFaultFile(int max, char* fname);
-void executeAltanta();
+void executeAltanta(char* fname, char* benchName);
+void processBenchFiles(char* fname);

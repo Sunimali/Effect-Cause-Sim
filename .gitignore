@@ -1,0 +1,44 @@
+# Compiled object files
+*.o
+
+#atlenta files
+*.test
+*.fault
+*.bench
+
+# Compiled dynamic libraries
+*.so
+
+# Compiled static libraries
+*.a
+
+# Executable files
+*.out
+*.exe
+
+# Debug files
+*.dSYM/
+*.stackdump
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.swp
+
+# Build directories
+/build/
+/dist/
+/bin/
+/obj/
+/lib/
+
+# IDE specific files
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log
