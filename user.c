@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 /***************************************************************************************************************************
  * write netlist into a BenchmarkFile
  * ****************************************************************************************************************************/
@@ -562,12 +563,25 @@ void processTestfiles(char* fname,  int maxPat){
                     itr = itr + 1;
                 }
                 int i;
-                for( i = 1; i <= maxPat; i++){ //write random patterns to the file
-                    int randomNum = rand() % patternCount + 1;
-                    fprintf(ftestPattern, "%s %d\n", pattern[randomNum].pattern, pattern[randomNum].faultFreeVal);
-                }
+                fprintf(ftestPattern, "%s\n", entry->d_name); //write the file name to the test pattern file
                 
-            }
+                if(patternCount == 0){ //if no patterns in the file skip writing the patterns
+                    continue;
+                }else if(patternCount < maxPat){ //if the number of patterns in the file is less than the required number of patterns         
+                    for (i = 1; i <= patternCount; i++){
+                        fprintf(ftestPattern, "%s %d\n", pattern[i].pattern, pattern[i].faultFreeVal);
+                    }
+                }else{
+                    int randomIndex[maxPat];
+                    generateUniqueRandomNumbers(randomIndex, patternCount, maxPat);
+                    for (i = 0; i < maxPat; i++){
+                        fprintf(ftestPattern, "%s %d\n", pattern[randomIndex[i]].pattern, pattern[randomIndex[i]].faultFreeVal);
+                    }
+                }    
+                
+                }
+                fprintf(ftestPattern, "\n");
+                
             if(itr ==MAX_RND_PATTERNS){ //break after reading 500 test files
                 break;
             }
@@ -586,5 +600,26 @@ void createTestPatterns(char* fname) {
     int i;
     for ( i = 0; i < 4; i++){
         processTestfiles(fname, maxPat[i]);
+    }
+}
+
+int isInArray(int num, int *array, int size) {
+    int i;
+    for ( i = 0; i < size; i++) {
+        if (array[i] == num) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void generateUniqueRandomNumbers(int *randomIndex, int patternCount, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        int randomNum;
+        do {
+            randomNum = rand() % patternCount + 1;
+        } while (isInArray(randomNum, randomIndex, i));
+        randomIndex[i] = randomNum;
     }
 }

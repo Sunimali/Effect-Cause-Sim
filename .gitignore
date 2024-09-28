@@ -43,3 +43,4 @@
 # Logs
 *.log
 project
+c17/*.pattern
