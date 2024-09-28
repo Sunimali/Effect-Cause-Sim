@@ -558,30 +558,16 @@ void processTestfiles(char* fname,  int maxPat){
                 PatternData pattern[MAX_PATTERNS];
                 int patternCount = readTestFile(ftest, pattern);
                 fclose(ftest);
-
-                if(patternCount!=0){ //if no patterns in the file skip increasing the itr
-                    itr = itr + 1;
-                }
-                int i;
-                fprintf(ftestPattern, "%s\n", entry->d_name); //write the file name to the test pattern file
-                
+            
                 if(patternCount == 0){ //if no patterns in the file skip writing the patterns
                     continue;
-                }else if(patternCount < maxPat){ //if the number of patterns in the file is less than the required number of patterns         
-                    for (i = 1; i <= patternCount; i++){
-                        fprintf(ftestPattern, "%s %d\n", pattern[i].pattern, pattern[i].faultFreeVal);
-                    }
                 }else{
-                    int randomIndex[maxPat];
-                    generateUniqueRandomNumbers(randomIndex, patternCount, maxPat);
-                    for (i = 0; i < maxPat; i++){
-                        fprintf(ftestPattern, "%s %d\n", pattern[randomIndex[i]].pattern, pattern[randomIndex[i]].faultFreeVal);
-                    }
+                    printTestPatternsPerFault(ftestPattern, pattern, patternCount, maxPat);
+                    itr = itr + 1;
                 }    
                 
-                }
-                fprintf(ftestPattern, "\n");
-                
+            }
+                           
             if(itr ==MAX_RND_PATTERNS){ //break after reading 500 test files
                 break;
             }
@@ -622,4 +608,26 @@ void generateUniqueRandomNumbers(int *randomIndex, int patternCount, int size) {
         } while (isInArray(randomNum, randomIndex, i));
         randomIndex[i] = randomNum;
     }
+}
+// end of generateUniqueRandomNumbers
+
+/***************************************************************************************************************************
+ * print test patterns per test file
+ * ****************************************************************************************************************************/
+void printTestPatternsPerFault(FILE* ftestPattern,PatternData* patterns,  int patternCount, int maxPat){ 
+    int i;
+
+    if(patternCount < maxPat){ //if the number of patterns in the file is less than the required number of patterns         
+        for (i = 1; i <= patternCount; i++){
+            fprintf(ftestPattern, "%s %d\n", patterns[i].pattern, patterns[i].faultFreeVal);
+        }
+    }else{
+        int randomIndex[maxPat];
+        generateUniqueRandomNumbers(randomIndex, patternCount, maxPat);
+        for (i = 0; i < maxPat; i++){
+            fprintf(ftestPattern, "%s %d\n", patterns[randomIndex[i]].pattern, patterns[randomIndex[i]].faultFreeVal);
+        }
+    }
+    fprintf(ftestPattern, "\n");    
+    
 }

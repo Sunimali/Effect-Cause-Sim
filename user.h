@@ -43,3 +43,4 @@ void processBenchFiles(char* fname);
 int readTestFile( FILE* ftest, PatternData* patterns);
 void processTestfiles(char* fname,  int maxPat);
 void createTestPatterns(char* fname);
+void printTestPatternsPerFault(FILE* ftestPattern,PatternData* patterns,  int patternCount, int maxPat);
