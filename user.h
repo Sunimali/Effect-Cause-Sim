@@ -16,6 +16,7 @@ Header Files
  * Constants
  * ****************************************************************************************************************************/
 #define MAX_PATTERNS 1000
+#define MAX_RND_PATTERNS 500
 
 typedef struct {
     char pattern[Mlin];
@@ -40,4 +41,5 @@ void createFaultFile(int max, char* fname);
 void executeAltanta(char* fname, char* benchName);
 void processBenchFiles(char* fname);
 int readTestFile( FILE* ftest, PatternData* patterns);
-void createTestPatternFile(char* fname, int maxPat);
+void processTestfiles(char* fname,  int maxPat);
+void createTestPatterns(char* fname);

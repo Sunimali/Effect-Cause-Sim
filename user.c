@@ -506,11 +506,11 @@ int readTestFile( FILE* ftest, PatternData* patterns) {
         }else if(patternsStart == 1){ //read the test patterns    
             char pattern[Mlin];
             int faultFreeVal;
-            sscanf(line, " : %s %d", pattern, &faultFreeVal); // Extract the pattern and fault-free value
+            sscanf(line, "  %*d: %s %d", pattern, &faultFreeVal); // Extract the pattern and fault-free value
             numPatterns = numPatterns + 1;
     
             patterns[numPatterns].faultFreeVal = faultFreeVal;
-            strcpy(patterns[numPatterns].pattern, pattern);
+            strcpy((patterns)[numPatterns].pattern, pattern);
   
         } else {
             continue;
@@ -527,9 +527,64 @@ int readTestFile( FILE* ftest, PatternData* patterns) {
  * create test pattern file
  * ****************************************************************************************************************************/
 
-void createTestPatternFile(char* fname, int maxPat){
-    
+void processTestfiles(char* fname,  int maxPat){
 
-    //read the .test file and store the information in  vector structure
+    char fpatternname[Mfnam]; // Buffer to hold the file name
+    sprintf(fpatternname, "%s/%s_rand%d.pattern", fname, fname,maxPat);
+    FILE* ftestPattern = fopen(fpatternname, "w");
+
+    struct dirent* entry;
+    DIR* dp = opendir(fname);
+
+    if (dp == NULL) {
+        perror("opendir");
+        return;
+    }
+    int itr = 0;
+
+    while ((entry = readdir(dp))) { //read all files in the directory
+        
+            char* ext = strrchr(entry->d_name, '.');
+            if (ext && strcmp(ext, ".test") == 0) { //read only .test files
+                char filePath[Mfnam]; // Buffer to hold the file path
+                sprintf(filePath, "%s/%s", fname, entry->d_name);
+ 
+                FILE* ftest = fopen(filePath, "r"); //open the file
+                if (ftest == NULL) {
+                    perror("fopen");
+                    return;
+                }
+                PatternData pattern[MAX_PATTERNS];
+                int patternCount = readTestFile(ftest, pattern);
+                fclose(ftest);
+
+                if(patternCount!=0){ //if no patterns in the file skip increasing the itr
+                    itr = itr + 1;
+                }
+                int i;
+                for( i = 1; i <= maxPat; i++){ //write random patterns to the file
+                    int randomNum = rand() % patternCount + 1;
+                    fprintf(ftestPattern, "%s %d\n", pattern[randomNum].pattern, pattern[randomNum].faultFreeVal);
+                }
+                
+            }
+            if(itr ==MAX_RND_PATTERNS){ //break after reading 500 test files
+                break;
+            }
+        }
+        fclose(ftestPattern);
 }
 // end of createTestPatternFile
+
+/***************************************************************************************************************************
+ * create test patterns
+ * ****************************************************************************************************************************/
+void createTestPatterns(char* fname) {
+    //create a directory with the given circuit name
+    
+    int maxPat[] = {1, 2, 3, 4};
+    int i;
+    for ( i = 0; i < 4; i++){
+        processTestfiles(fname, maxPat[i]);
+    }
+}
