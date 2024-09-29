@@ -17,7 +17,7 @@ Constant Declarations
 // VARIOUS CONSTANTS
 #define Mfnam      256			// max size for a file name
 #define Mnod    15000 		        // max number of nodes in a graph/node
-#define Mlin      200			// max size of characters in a line
+#define Mlin      500			// max size of characters in a line
 #define Mnam       25			// max size of a node name
 #define Mtyp       10			// max type of nodes/gates
 #define Mout       16		        // max node out degree (Nfo)
@@ -90,3 +90,5 @@ User Defined Functions in user.c
 ****************************************************************************************************************************/
 
 /****************************************************************************************************************************/
+
+
