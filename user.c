@@ -203,12 +203,13 @@ void updateFanInFanOut(NODE* graph, NODE* graphDup, int max, int count, int newN
             }
 
             //switch between the original and duplicate nodes
-
-            if (changeFin == 1) {
-                changeFin = 0;
-            } else {
-                changeFin = 1;
-            }
+             if (graphDup[i].Type != 1) { //skip primary inputs
+                if (changeFin == 1) {
+                    changeFin = 0;
+                } else {
+                    changeFin = 1;
+                }
+             }
 
             //update fanout list            
             for (temp = graphDup[i].Fot; temp != NULL; temp = temp->next) {
