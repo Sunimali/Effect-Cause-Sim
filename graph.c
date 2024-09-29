@@ -323,13 +323,16 @@ int readBench(FILE *fbench, NODE *graph)
 			graph[id].Type = AssignType(type); //assign the type
 
 			char *fanin = strtok(fanInList, ", "); //get the fanin list by splitting the string
+			int nFanIn = 0;
 			while (fanin != NULL)
 			{
+				nFanIn++;
 				int fanId = atoi(fanin);
 				InsertList(&graph[id].Fin, fanId); //insert the fanin 
 				InsertList(&graph[fanId].Fot, id); //insert the fanout
 				fanin = strtok(NULL, ", ");
 			}
+			graph[id].Nfi = nFanIn; //set the number of fanins
 		}
 		if (id > mid){
 			mid = id; //get the max id and find total number of nodes

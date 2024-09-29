@@ -379,11 +379,19 @@ void convertType(NODE* graph, int max, int typeId, int i, char* fname) {
     int len = 6 ;
     printf("len %d\n", len);
     char fileName[Mfnam]; // Buffer to hold the file name
+    int excludeXOR = 0;
+
+    if(graph[i].Nfi >=3){ 
+        excludeXOR = 1;
+    }
 
     for( j = 0; j < len; j++){
         if (type == types[j]){
             continue;
         } else {
+            if (excludeXOR == 1 && j >= 4){
+                continue;
+            } // skip XOR and XNOR if the node has more than 2 fanins
             sprintf(fileName, "%s/%s_%d_%sto_%s.bench", fname,fname, i, type, types[j]);
             FILE* fbench = fopen(fileName, "w");
             graph[i].Type = AssignType(types[j]); // add error to the node

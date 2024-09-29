@@ -48,12 +48,11 @@ char* fname[Mfnam];
 strncpy(fname, argv[3], Mfnam - 1);
 printf("call faultInjection\n");
 printf("fname = %s\n", fname);
-// faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
+faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
 
 // //create fault file
-// createFaultFile(count, fname);
-// // executeAltanta(fname);
-// processBenchFiles(fname);
+createFaultFile(count, fname);
+processBenchFiles(fname);
 // FILE *ftest;
 // //read the .test file and store the information in  vector structure
 // printf("call readTestFile\n");
