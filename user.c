@@ -129,7 +129,7 @@ int createDuplicateGraph(NODE* graph, NODE* graphDup, int max, int oldToNewNodes
     // intialize all nodes in graph structure
     for (i = 0; i < Mnod; i++)
     {
-        InitializeCircuit(graphDup, i);
+        initializeCircuit(graphDup, i);
     }
 
     int j = 1;
@@ -285,24 +285,24 @@ void deepCopyNode(NODE* dest, NODE* src) {
 
 void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
     //add or gate PO to combine the xor gates
-    graphDup[final].Type = AssignType("OR");
+    graphDup[final].Type = assignType("OR");
  
     int j;
     for(j = 1; j <= count; j++){
         //add xor gates
         if(graphDup[j].Po == 1){
            
-            graphDup[count+1].Type = AssignType("XOR");
-            InsertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
-            InsertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
-            InsertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
+            graphDup[count+1].Type = assignType("XOR");
+            insertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
+            insertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
+            insertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
 
             graphDup[j].Po = 0; //set primary output to 0
             graphDup[j+1].Po = 0;
-            InsertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
-            InsertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
+            insertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
+            insertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
 
-            InsertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
+            insertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
 
             count = count + 1; //increment count
 
@@ -394,12 +394,12 @@ void convertType(NODE* graph, int max, int typeId, int i, char* fname) {
             } // skip XOR and XNOR if the node has more than 2 fanins
             sprintf(fileName, "%s/%s_%d_%sto_%s.bench", fname,fname, i, type, types[j]);
             FILE* fbench = fopen(fileName, "w");
-            graph[i].Type = AssignType(types[j]); // add error to the node
+            graph[i].Type = assignType(types[j]); // add error to the node
 
             // write bechmark file with error
             writeBenchmarkFile(max, graph, fbench);
             fclose(fbench);
-            graph[i].Type = AssignType(type); // change the gragh to error free
+            graph[i].Type = assignType(type); // change the gragh to error free
         } 
     }
 }
@@ -459,8 +459,9 @@ void executeAltanta(char* fname, char* benchName) {
     sprintf(outputFile, "%s/%s.test", fname, benchName);
 
     //build the command to execute atlanta > /path/to/output_directory/output.test
-    char command[256];                  
-    snprintf(command, sizeof(command), "/opt/net/apps/atalanta/atalanta -A -f %s -t %s %s", faultFile, outputFile, benchFile);
+    char command[256]; 
+                    // /opt/net/apps/atalanta/atalanta 
+    snprintf(command, sizeof(command), "/workspaces/Atalanta/atalanta -D %d -f %s -t %s %s", MAX_PATTERNS,faultFile, outputFile, benchFile);
     printf("command = %s\n", command);
     //pass the command to the system
     system(command);
@@ -566,6 +567,8 @@ void processTestfiles(char* fname,  int maxPat){
                 }
                 PatternData pattern[MAX_PATTERNS];
                 int patternCount = readTestFile(ftest, pattern);
+                printf("patternCount= %d\n", patternCount);
+                
                 fclose(ftest);
             
                 if(patternCount == 0){ //if no patterns in the file skip writing the patterns

@@ -46,9 +46,8 @@ typedef struct LIST_type {
    struct LIST_type *next;  //pointer to next id element( if there is no element, then it will be NULL)		
 } LIST;
 //2.Stucture declaration for NODE
-typedef struct NODE_type
-{
-  char Name[Mnam];                      //name of the node
+typedef struct NODE_type{
+  char name[Mnam];                      //name of the node
   int Type,Nfi,Nfo,Po;                  //type, nooffanins, nooffanouts,primaryo/p
   int Mark,Cval,Fval;                    //marker,correctvalue,faultvalue
   LIST *Fin,*Fot;                      //fanin members, fanout members 
@@ -69,18 +68,18 @@ Functions in given.c
 /***************************************************************************************************************************
 LIST Structure Functions
 ****************************************************************************************************************************/
-void InsertList(LIST **,int);
-void PrintList(LIST *);
-void FreeList(LIST **);
+void insertList(LIST **,int);
+void printList(LIST *);
+void freeList(LIST **);
 /***************************************************************************************************************************
  NODE Structure Functions
 ****************************************************************************************************************************/
-int ReadIsc(FILE *,NODE *);
+int readIsc(FILE *,NODE *);
 int readBench(FILE *,NODE *);
-void InitializeCircuit(NODE *,int);
-int AssignType(char *);
-void PrintCircuit(NODE *,int);
-void ClearCircuit(NODE *,int);
+void initializeCircuit(NODE *,int);
+int assignType(char *);
+void printCircuit(NODE *,int);
+void clearCircuit(NODE *,int);
 /***************************************************************************************************************************
  PATTERN Structure Functions
 ****************************************************************************************************************************/

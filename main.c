@@ -19,19 +19,19 @@ NODE graphB[Mnod];
 NODE graphDup[Mnod]; 
 
 //Read the .isc file and store the information in graph structure
-fisc=fopen(argv[1],"r");                           //file pointer to open .isc file 
-Max=0; 
-Max=ReadIsc(fisc,graph);                 //read .isc file and return index of last node in graph formed
-fclose(fisc);                            //close file pointer for .isc file
-PrintCircuit(graph,Max);  
+// fisc=fopen(argv[1],"r");                           //file pointer to open .isc file 
+// Max=0; 
+// Max=readIsc(fisc,graph);                 //read .isc file and return index of last node in graph formed
+// fclose(fisc);                            //close file pointer for .isc file
+// printCircuit(graph,Max);  
                //print all members of graph structure
 
 //Read the .vec file and store the information in  vector structure
 
 
-fbench=fopen(argv[2],"r"); 
+fbench=fopen(argv[1],"r"); 
 Max = readBench(fbench, graphB);
-PrintCircuit(graphB,Max); 
+printCircuit(graphB,Max); 
 
 // fbenchout=fopen(argv[3],"w"); 
 // writeBenchmarkFile(Max, graphB, fbenchout);
@@ -42,10 +42,10 @@ int oldToNewNodes[Max + 1];
 printf("call createDuplicateGraph\n");
 int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
 printf("count = %d\n", count);
-PrintCircuit(graphDup,count);
+printCircuit(graphDup,count);
 
 char* fname[Mfnam];
-strncpy(fname, argv[3], Mfnam - 1);
+strncpy(fname, argv[2], Mfnam - 1);
 printf("call faultInjection\n");
 printf("fname = %s\n", fname);
 faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
@@ -72,7 +72,7 @@ createTestPatterns(fname);
 
 //fclose(fres);                                                  //close file pointer for .out file
 
-ClearCircuit(graph,Mnod);                                      //clear memeory for all members of graph
+clearCircuit(graph,Mnod);                                      //clear memeory for all members of graph
 //for(a=0;a<Total;a++){ bzero(vector[a].piv,Mpi); }                //clear memeory for all members of vector
 return;
 }//end of main
