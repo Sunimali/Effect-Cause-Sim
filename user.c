@@ -377,7 +377,7 @@ void convertType(NODE* graph, int max, int typeId, int i, char* fname) {
     char* type = typeToString(typeId);
     const char* types[] = { "AND", "NAND", "OR", "NOR", "XOR", "XNOR" };
     int len = 6 ;
-    printf("len %d\n", len);
+
     char fileName[Mfnam]; // Buffer to hold the file name
     int excludeXOR = 0;
 
@@ -567,7 +567,6 @@ void processTestfiles(char* fname,  int maxPat){
                 }
                 PatternData pattern[MAX_PATTERNS];
                 int patternCount = readTestFile(ftest, pattern);
-                printf("patternCount= %d\n", patternCount);
                 
                 fclose(ftest);
             
