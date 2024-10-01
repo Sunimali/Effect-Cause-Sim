@@ -50,9 +50,10 @@ printf("call faultInjection\n");
 printf("fname = %s\n", fname);
 faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
 
+printf("newid %d\n",oldToNewNodes[241]);
+
 // //create fault file
 createFaultFile(count, fname);
-processBenchFiles(fname);
 // FILE *ftest;
 // //read the .test file and store the information in  vector structure
 // printf("call readTestFile\n");
@@ -64,7 +65,7 @@ processBenchFiles(fname);
 // numPatterns = readTestFile(ftest, patterns);
 // fclose(ftest);
 //Opt=0; 
-createTestPatterns(fname);
+// createTestPatterns(fname);
 //Opt=atoi(argv[3]);                          //getting the option from terminal for xval
 //fres=fopen(argv[2],"w");                           //file pointer to open .out file for printing results
 
