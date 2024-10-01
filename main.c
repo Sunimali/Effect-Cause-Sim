@@ -31,42 +31,23 @@ NODE graphDup[Mnod];
 
 fbench=fopen(argv[1],"r"); 
 Max = readBench(fbench, graphB);
-printCircuit(graphB,Max); 
+// printCircuit(graphB,Max); 
 
-// fbenchout=fopen(argv[3],"w"); 
-// writeBenchmarkFile(Max, graphB, fbenchout);
-// fclose(fbenchout);
 
 //create a duplicate graph
 int oldToNewNodes[Max + 1];
-printf("call createDuplicateGraph\n");
 int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
-printf("count = %d\n", count);
-printCircuit(graphDup,count);
+// printCircuit(graphDup,count);
 
 char* fname[Mfnam];
 strncpy(fname, argv[2], Mfnam - 1);
-printf("call faultInjection\n");
-printf("fname = %s\n", fname);
 faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
 
 // //create fault file
 createFaultFile(count, fname);
 processBenchFiles(fname);
-// FILE *ftest;
-// //read the .test file and store the information in  vector structure
-// printf("call readTestFile\n");
-// ftest = fopen("c17/c17_6_NANDto_AND.test", "r");
-// printf("open file\n");
-// PatternData* patterns[MAX_PATTERNS];
-// int numPatterns;
-// int capacity;
-// numPatterns = readTestFile(ftest, patterns);
-// fclose(ftest);
-//Opt=0; 
 createTestPatterns(fname);
-//Opt=atoi(argv[3]);                          //getting the option from terminal for xval
-//fres=fopen(argv[2],"w");                           //file pointer to open .out file for printing results
+
 
 //Perform Logic Simulation for each Input vector and print the Pos .val in output file   
 
