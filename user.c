@@ -298,17 +298,17 @@ void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
                 continue;
             }else{
            
-                graphDup[count+1].Type = AssignType("XOR");
-                InsertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
-                InsertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
-                InsertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
+                graphDup[count+1].Type = assignType("XOR");
+                insertList(&graphDup[count+1].Fin, j ); //fanin of xor gate from original node
+                insertList(&graphDup[count+1].Fin, j+1); //fanin of xor gate from duplicate node
+                insertList(&graphDup[count+1].Fot, final); //fanout of xor gate to or gate
 
                 graphDup[j].Po = 0; //set primary output to 0
                 graphDup[j+1].Po = 0;
-                InsertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
-                InsertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
+                insertList(&graphDup[j].Fot, count+1); //fanout of original node to xor gate
+                insertList(&graphDup[j+1].Fot, count+1); //fanout of duplicate node to xor gate
 
-                InsertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
+                insertList(&graphDup[final].Fin, count+1); //fanin of or gate from xor gate
 
                 count = count + 1; //increment count
             }
@@ -468,7 +468,6 @@ void executeAltanta(char* fname, char* benchName) {
     char command[256]; 
                     // /opt/net/apps/atalanta/atalanta 
     snprintf(command, sizeof(command), "/opt/net/apps/atalanta/atalanta -D %d -f %s -t %s %s", MAX_PATTERNS,faultFile, outputFile, benchFile);
-    printf("command = %s\n", command);
     //pass the command to the system
     system(command);
 
