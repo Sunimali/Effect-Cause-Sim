@@ -320,10 +320,10 @@ void addXorComponents(NODE* graphDup, int count, int xorCount, int final) {
 // end of addXorComponents
 
 /***************************************************************************************************************************
- * fault injection
+ * fault injection to duplicate graph
  * ****************************************************************************************************************************/
 
-void faultInjection(NODE* graphDup, NODE* graph, int count, int max, int oldTonew[], char* fname){
+void faultInjectionToDuplicate(NODE* graphDup, NODE* graph, int count, int max, int oldTonew[], char* fname){
     int i;
 
    // Create a directory with the given circuit name
@@ -372,7 +372,7 @@ void faultInjection(NODE* graphDup, NODE* graph, int count, int max, int oldTone
         }
     }
 }
-// end of faultInjection
+// end of faultInjectionToDuplicate
 
 /***************************************************************************************************************************
  * convert the type of the node
@@ -397,7 +397,7 @@ void convertType(NODE* graph, int max, int typeId, int i, char* fname) {
         } else {
             if (excludeXOR == 1 && j >= 4){
                 continue;
-            } // skip XOR and XNOR if the node has more than 2 fanins
+            } // skip XOR and XNOR if the node has more than 2 fanins(atalanta does not support XOR and XNOR with more than 2 fanins)
             sprintf(fileName, "%s/%s_%d_%sto_%s.bench", fname,fname, i, type, types[j]);
             FILE* fbench = fopen(fileName, "w");
             graph[i].Type = assignType(types[j]); // add error to the node
@@ -635,15 +635,220 @@ void printTestPatternsPerFault(FILE* ftestPattern,PatternData* patterns,  int pa
 
     if(patternCount < maxPat){ //if the number of patterns in the file is less than the required number of patterns         
         for (i = 1; i <= patternCount; i++){
-            fprintf(ftestPattern, "%s %d\n", patterns[i].pattern, patterns[i].faultFreeVal);
+            fprintf(ftestPattern, "%s\n", patterns[i].pattern);
         }
     }else{
         int randomIndex[maxPat];
         generateUniqueRandomNumbers(randomIndex, patternCount, maxPat);
         for (i = 0; i < maxPat; i++){
-            fprintf(ftestPattern, "%s %d\n", patterns[randomIndex[i]].pattern, patterns[randomIndex[i]].faultFreeVal);
+            fprintf(ftestPattern, "%s\n", patterns[randomIndex[i]].pattern);
         }
     }
-    fprintf(ftestPattern, "\n");    
-    
+        
 }
+
+//end of printTestPatternsPerFault
+
+/***************************************************************************************************************************
+ * Function to read pattern file
+ * ****************************************************************************************************************************/
+
+void readPatternFile(FILE* fpat, int patternList[Mpt]) {
+    char line[Mlin];
+    int i = 0;
+    while (fgets(line, Mlin, fpat)) {
+        int pattern = atoi(line);
+        if (!isPatternInList(pattern, patternList, i)) {
+            patternList[i] = pattern;
+            i = i + 1;
+        }
+    }
+}
+//end of readPatternFile
+
+/***************************************************************************************************************************
+ * Function to check if a pattern is in the list
+ * ****************************************************************************************************************************/
+
+int isPatternInList(int pattern, int patternList[], int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        if (patternList[i] == pattern) {
+            return 1;
+        }
+    }
+    return 0;
+}
+//end of isPatternInList
+
+void FaultsSimulator(NODE* node, int max, int patternList[Mpt], FILE* res) {
+    int i;
+    for (i = 1; i <= max; i++){
+        //skip primary inputs
+        if (node[i].Type == 1){
+            continue;
+        } else if (node[i].Type == 0){ //skip unknown nodes
+            continue;
+        } else {
+            if (node[i].Type == 9){ //convert inverter to buffer 
+                node[i].Type = 8; // add error to the node
+
+                // create a graph with buffer add error to the node
+                simulateLogic(node, patternList, max, res);
+
+                node[i].Type = 9; // change the gragh to error free
+
+
+            } else if (node[i].Type == 8){ //convert buffer to inverter
+                node[i].Type = 9; // add error to the node
+                simulateLogic(node, patternList, max, res);
+
+                node[i].Type = 8; // change the gragh to error free
+            } else {
+                // create file for each node types
+                injectFaultToOriginalGraph(node, max, i, node[i].Type, patternList, res);   
+            }
+        }
+
+    }
+}
+//end of FaultsSimulator
+
+void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int patternList[Mpt], FILE * res) {
+    char* type = typeToString(typeId);
+    const char* types[] = { "AND", "NAND", "OR", "NOR", "XOR", "XNOR" };
+    int len = 6 ;
+
+    for (int j = 0; j < len; j++){
+        if (type == types[j]){
+            continue;
+        } else {
+            graph[i].Type = assignType(types[j]); // add error to the node
+            simulateLogic(graph, patternList, max, res);
+            graph[i].Type = assignType(type); // change the gragh to error free
+        }
+    }   
+}
+
+/***************************************************************************************************
+ Function to simulate logic
+***************************************************************************************************/
+ void simulateLogic(NODE * Node, int patternList[Mpt], int tGat, FILE * res){
+		int itr ;
+		int curPatternIndex = 0;
+		for(itr = 0; itr <= tGat; itr++){ 
+			if(Node[itr].Type != 0){  //not an invalid gate
+				switch(Node[itr].Type){
+					case 1: // type input
+						Node[itr].Cval = patternList[curPatternIndex];
+						curPatternIndex ++;
+						break;
+					case 2: // type  from
+						Node[itr].Cval = Node[Node[itr].Fin->id].Cval; 
+						break;
+					case 3: // type  buff
+						Node[itr].Cval = Node[Node[itr].Fin->id].Cval;
+						break;
+					case 4: // type not
+						Node[itr].Cval = notOperation(Node[Node[itr].Fin->id].Cval);
+						break;
+					case 5: //type and
+						Node[itr].Cval = andOperation(Node, (Node[itr].Fin));
+						break;
+					case 6: //type Nand
+						Node[itr].Cval = notOperation(andOperation(Node, (Node[itr].Fin)));
+						break;
+					case 7: // type or
+						Node[itr].Cval = orOperation(Node, (Node[itr].Fin));
+						break;
+					case 8: // type Nor
+						Node[itr].Cval = notOperation(orOperation(Node, (Node[itr].Fin)));
+						break;
+					case 9: // type xor
+						Node[itr].Cval = xorOperation(Node, (Node[itr].Fin));
+						break;
+					case 10: // type xNor
+						Node[itr].Cval = notOperation(xorOperation(Node, (Node[itr].Fin)));
+						break;
+				}
+				if(Node[itr].Nfo == 0){
+					fprintf(res, "%d" , Node[itr].Cval);
+				}
+			}
+
+		}
+		fprintf(res, "\n");
+ }
+
+//end of simulateLogic
+/****************************************************************************************************************************/
+
+/***************************************************************************************************
+ Function to notOperation
+***************************************************************************************************/
+int notOperation(int input){
+	if(input == 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+//end of andOperation
+/****************************************************************************************************************************/
+
+
+/***************************************************************************************************
+ Function to andOperation
+***************************************************************************************************/
+int andOperation(NODE * Node, LIST *Cur){
+	LIST *tmp=Cur;
+	int output=1;
+
+	while(tmp!=NULL){  
+		output = output & Node[tmp->id].Cval; // check output by two by two
+		if(output == 0){ // if one pair give out as 0 then stop
+			break;
+		}
+		tmp = tmp->next; 
+	} 
+	return output;
+}
+//end of andOperation
+/****************************************************************************************************************************/
+
+/***************************************************************************************************
+ Function to orOperation
+***************************************************************************************************/
+int orOperation(NODE * Node, LIST *Cur){
+	LIST *tmp=Cur;
+	int output=0;
+
+
+	while(tmp!=NULL){   
+		output = output | Node[tmp->id].Cval; // check output by two by two
+		if(output == 1){ // if one pair give out as 1 then stop
+			break;
+		}
+		tmp = tmp->next; 
+	} 
+	return output;
+}
+//end of orOperation
+/****************************************************************************************************************************/
+
+
+/***************************************************************************************************
+ Function to xorOperation
+***************************************************************************************************/
+int xorOperation(NODE * Node, LIST *Cur){
+	LIST *tmp=Cur;
+	int output=1;
+ 
+	if (Node[tmp->next->id].Cval == Node[tmp->id].Cval){ // check input value is equal or not
+		output = 0;
+	}
+		
+	return output;
+}
+//end of xorOperation
+/****************************************************************************************************************************/
