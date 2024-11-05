@@ -247,7 +247,7 @@ void clearCircuit(NODE* graph, int i){
 /*****************************************************************************************************************************
  Routine to read the Bench Markk(.isc files)
 *****************************************************************************************************************************/
-int readBench(FILE* fbench, NODE* graph){
+int readBench(FILE* fbench, NODE* graph, int* Npo){
 	int i, id, fid, Fin, fout, mid = 0;
 	char line[Mlin];
 	// intialize all nodes in graph structure
@@ -262,9 +262,11 @@ int readBench(FILE* fbench, NODE* graph){
 		} else if (line[0] == 'I') {//skip input
 			sscanf(line, "INPUT(%d)", &id);
 			graph[id].Type = assignType("INPT");
+			//increment the number of primary inputs
 		} else if (line[0] == 'O') { //read output
 			sscanf(line, "OUTPUT(%d)", &id);
 			graph[id].Po = 1;
+			(*Npo)++;
 		} else if (line[0] == '\n') { // skip empty lines
 			continue;
 		} else {
