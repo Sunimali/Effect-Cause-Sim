@@ -30,28 +30,47 @@ NODE graphDup[Mnod];
 
 
 fbench=fopen(argv[1],"r"); 
-Max = readBench(fbench, graphB);
+Npo = 0;
+Max = readBench(fbench, graphB, &Npo);
+
 // printCircuit(graphB,Max); 
 
 
 //create a duplicate graph
 int oldToNewNodes[Max + 1];
 int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
-// printCircuit(graphDup,count);
+// // printCircuit(graphDup,count);
 
 char* fname[Mfnam];
 strncpy(fname, argv[2], Mfnam - 1);
-faultInjection(graphDup, graph, count, Max,oldToNewNodes, fname);
+faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
 
 // //create fault file
 createFaultFile(count, fname);
 processBenchFiles(fname);
 createTestPatterns(fname);
 
+//read test patterns from the generated files
+//get random patterns file
 
-//Perform Logic Simulation for each Input vector and print the Pos .val in output file   
+ 
+int randNum = atoi(argv[3]); // Convert the argument to an integer
+int patternList[Mpt][Mlin]; // Array to store the patterns
+char fpatName[Mfnam];           // Buffer to store the file name
 
-//fclose(fres);                                                  //close file pointer for .out file
+    // Construct the file name using sprintf
+sprintf(fpatName, "%s/%s_rand%d.pattern",fname,fname, randNum);
+
+    // Open the file
+FILE *fpat = fopen(fpatName, "r");
+int tPt = readPatternFile(fpat, patternList);
+fclose(fpat);
+
+char fresName[Mfnam]; // Buffer to store the file name
+sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
+fres = fopen(fresName, "w");
+FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
+fclose(fres);
 
 clearCircuit(graph,Mnod);                                      //clear memeory for all members of graph
 //for(a=0;a<Total;a++){ bzero(vector[a].piv,Mpi); }                //clear memeory for all members of vector

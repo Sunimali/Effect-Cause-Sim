@@ -7,6 +7,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+
+int andGate[3][3] = {
+//o   1 xv  	
+  {0, 0, 0},
+  {0, 1, 2},
+  {0, 2, 2}
+};
+
+int orGate[3][3] = {
+//o   1 xv  	
+  {0, 1, 2},
+  {1, 1, 1},
+  {2, 1, 2}
+};
+
+int xorGate[3][3] = {
+//o   1 xv  	
+  {0, 1, 2},
+  {1, 0, 2},
+  {2, 2, 2}
+};
+
+int notGate[3] = {1, 0 , 2};
 /***************************************************************************************************************************
  * write netlist into a BenchmarkFile
  * ****************************************************************************************************************************/
@@ -653,16 +676,29 @@ void printTestPatternsPerFault(FILE* ftestPattern,PatternData* patterns,  int pa
  * Function to read pattern file
  * ****************************************************************************************************************************/
 
-void readPatternFile(FILE* fpat, int patternList[Mpt]) {
+int readPatternFile(FILE* fpat,  char patternList[Mpt][Mlin]) {
     char line[Mlin];
+    int tPt = 0; //total patterns
     int i = 0;
     while (fgets(line, Mlin, fpat)) {
-        int pattern = atoi(line);
-        if (!isPatternInList(pattern, patternList, i)) {
-            patternList[i] = pattern;
+        int j;
+        //replace x values with 2 in line
+        for (j = 0; j < strlen(line); j++) {
+            if (line[j] == 'x') {
+                line[j] = '2';
+            }
+        }
+
+        
+        if (!isPatternInList(line, patternList, i)) {
+            tPt = tPt + 1;
+            strcpy(patternList[i], line);
+            //replace x with 2 in pattern[i]
+
             i = i + 1;
         }
     }
+    return tPt;
 }
 //end of readPatternFile
 
@@ -670,62 +706,127 @@ void readPatternFile(FILE* fpat, int patternList[Mpt]) {
  * Function to check if a pattern is in the list
  * ****************************************************************************************************************************/
 
-int isPatternInList(int pattern, int patternList[], int size) {
+int isPatternInList(const char *pattern,  char patternList[Mpt][Mlin], int size) {
     int i;
     for (i = 0; i < size; i++) {
-        if (patternList[i] == pattern) {
-            return 1;
+        if (strcmp(pattern, patternList[i]) == 0) {
+            return 1; // Pattern is already in the list
         }
     }
     return 0;
 }
 //end of isPatternInList
 
-void FaultsSimulator(NODE* node, int max, int patternList[Mpt], FILE* res) {
+void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mpt][Mlin], FILE* res) {
     int i;
-    for (i = 1; i <= max; i++){
-        //skip primary inputs
-        if (node[i].Type == 1){
-            continue;
-        } else if (node[i].Type == 0){ //skip unknown nodes
-            continue;
-        } else {
-            if (node[i].Type == 9){ //convert inverter to buffer 
-                node[i].Type = 8; // add error to the node
+    int j;
+    int typesCount = 11;
+    int errorDetected[max][Npo][typesCount]; //initialize the error detected array to 0
 
-                // create a graph with buffer add error to the node
-                simulateLogic(node, patternList, max, res);
+    //initialize the error detected array to 0
+    for (i = 0; i < max; i++) {
+        for (j = 0; j < Npo; j++) {
+            int k;
+            for (k = 0; k < typesCount; k++) {
+                errorDetected[i][j][k] = 0;
+            }
+        }
+    }
+    //iterate through all patterns
+    for (i = 0; i < tPt; i++) {
+        
+        int outputNodes[Npo];
+        //initialize the output nodes to 0
+        for (j = 0; j < Npo; j++) {
+            outputNodes[j] = 0;
+        }
 
-                node[i].Type = 9; // change the gragh to error free
+        //run error free simulation
+        simulateLogic(node, Npo, patternList[i], max, res, outputNodes, 0);
 
-
-            } else if (node[i].Type == 8){ //convert buffer to inverter
-                node[i].Type = 9; // add error to the node
-                simulateLogic(node, patternList, max, res);
-
-                node[i].Type = 8; // change the gragh to error free
+        
+        //iterate through all nodes
+        for (j = 1; j <= max; j++) {
+            if (node[j].Type == 1) { //skip primary inputs
+                continue;
+            } else if (node[j].Type == 0) { //skip unknown nodes
+                continue;
             } else {
-                // create file for each node types
-                injectFaultToOriginalGraph(node, max, i, node[i].Type, patternList, res);   
+                injectFaultToOriginalGraph(node, max, j, node[j].Type, Npo, typesCount,patternList[i], outputNodes, errorDetected);
             }
         }
 
+        //print detected errors per pattern
+        printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
+
     }
+
+    
 }
 //end of FaultsSimulator
 
-void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int patternList[Mpt], FILE * res) {
+void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int Npo, int typesCount, char pattern[Mlin], int outputNodes[Npo],int errorDetected[max][Npo][typesCount]) {
     char* type = typeToString(typeId);
     const char* types[] = { "AND", "NAND", "OR", "NOR", "XOR", "XNOR" };
     int len = 6 ;
+    int j;
+    int k;
+     
+    //if buffer conver to not
+    if (typeId == 9) {
+        graph[i].Type = assignType("NOT");
+        simulateLogic(graph, Npo, pattern, max,  outputNodes,1);
+        checkDetectedErrors(graph,max,i, Npo, typesCount, outputNodes, errorDetected); //check detected errors
 
-    for (int j = 0; j < len; j++){
-        if (type == types[j]){
-            continue;
-        } else {
-            graph[i].Type = assignType(types[j]); // add error to the node
-            simulateLogic(graph, patternList, max, res);
-            graph[i].Type = assignType(type); // change the gragh to error free
+        graph[i].Type = assignType(type); // change the gragh to error free
+    } else if (typeId == 8) { //if not convert to buffer
+        graph[i].Type = assignType("BUFF");
+        simulateLogic(graph, Npo, pattern, max, outputNodes,1);
+        checkDetectedErrors(graph,max,i, Npo, typesCount, outputNodes, errorDetected); //check detected errors
+        graph[i].Type = assignType(type); // change the gragh to error free
+    } else {
+
+        for (j = 0; j < len; j++){
+            if (type == types[j]){
+                continue;
+            } else {
+                graph[i].Type = assignType(types[j]); // add error to the node     
+                simulateLogic(graph, Npo, pattern, max,  outputNodes,1);
+                checkDetectedErrors(graph,max, i, Npo, typesCount, outputNodes, errorDetected); //check detected errors
+                graph[i].Type = assignType(type); // change the gragh to error free
+            }
+        }
+    }
+}
+
+void printErrorDetected(FILE* res, int max, int Npo, char pattern[Mlin],int outputNodes[Npo], int typesCount, int errorDetected[max][Npo][typesCount]) {
+    int j,k,l;
+    fprintf(res, "pattern: %s\n", pattern);
+        for (j = 0; j < Npo; j++) { //iterate through all primary outputs
+            fprintf(res, "primary output node id: %d\n", outputNodes[j]);
+            for(l = 1; l <= max; l++){ //iterate through all nodes
+                for (k = 0; k < typesCount; k++) { //iterate through all fault types
+                    char* type = typeToString(k);
+                    if (errorDetected[l][j][k] == 1) {
+                        fprintf(res, "fault type: %s fault node id: %d\n", type, l);   
+                    }
+                }
+            
+            }
+            fprintf(res, "\n");
+        }
+}
+
+void checkDetectedErrors(NODE* node, int max, int errorNodeId, int Npo, int typesCount,int outputNodes[Npo], int errorDetected[max][Npo][typesCount]) {
+    int i;
+    for (i = 0; i < Npo; i++) {
+    
+        if(node[outputNodes[i]].Cval != node[outputNodes[i]].Fval){
+            int type = node[errorNodeId].Type;
+            
+            errorDetected[errorNodeId][i][type] = 1; //set the error detected to 1
+            //clear the error
+            node[outputNodes[i]].Cval = node[outputNodes[i]].Fval;
         }
     }   
 }
@@ -733,51 +834,63 @@ void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int patt
 /***************************************************************************************************
  Function to simulate logic
 ***************************************************************************************************/
- void simulateLogic(NODE * Node, int patternList[Mpt], int tGat, FILE * res){
+                         
+ void simulateLogic(NODE * Node, int Npo, char pattern[Mlin], int tGat, int outputNodes[Npo], int error){
 		int itr ;
 		int curPatternIndex = 0;
-		for(itr = 0; itr <= tGat; itr++){ 
-			if(Node[itr].Type != 0){  //not an invalid gate
-				switch(Node[itr].Type){
-					case 1: // type input
-						Node[itr].Cval = patternList[curPatternIndex];
-						curPatternIndex ++;
-						break;
-					case 2: // type  from
-						Node[itr].Cval = Node[Node[itr].Fin->id].Cval; 
-						break;
-					case 3: // type  buff
-						Node[itr].Cval = Node[Node[itr].Fin->id].Cval;
-						break;
-					case 4: // type not
-						Node[itr].Cval = notOperation(Node[Node[itr].Fin->id].Cval);
-						break;
-					case 5: //type and
-						Node[itr].Cval = andOperation(Node, (Node[itr].Fin));
-						break;
-					case 6: //type Nand
-						Node[itr].Cval = notOperation(andOperation(Node, (Node[itr].Fin)));
-						break;
-					case 7: // type or
-						Node[itr].Cval = orOperation(Node, (Node[itr].Fin));
-						break;
-					case 8: // type Nor
-						Node[itr].Cval = notOperation(orOperation(Node, (Node[itr].Fin)));
-						break;
-					case 9: // type xor
-						Node[itr].Cval = xorOperation(Node, (Node[itr].Fin));
-						break;
-					case 10: // type xNor
-						Node[itr].Cval = notOperation(xorOperation(Node, (Node[itr].Fin)));
-						break;
-				}
-				if(Node[itr].Nfo == 0){
-					fprintf(res, "%d" , Node[itr].Cval);
-				}
-			}
-
-		}
-		fprintf(res, "\n");
+        int pocount = 0;
+        
+            for(itr = 0; itr <= tGat; itr++){ 
+                if(Node[itr].Type != 0){  //not an invalid gate
+                    switch(Node[itr].Type){
+                        case 1: // type input
+                            Node[itr].Cval = pattern[curPatternIndex];
+                            Node[itr].Fval = pattern[curPatternIndex];
+                            curPatternIndex ++;
+                            break;
+                        case 8: // type  buff
+                            Node[itr].Cval = Node[Node[itr].Fin->id].Cval;
+                            break;
+                        case 9: // type not
+                            Node[itr].Cval = notOperation(Node[Node[itr].Fin->id].Cval);
+                            break;
+                        case 2: //type and
+                            Node[itr].Cval = andOperation(Node, (Node[itr].Fin));
+                            break;
+                        case 3: //type Nand
+                            Node[itr].Cval = notOperation(andOperation(Node, (Node[itr].Fin)));
+                            break;
+                        case 4: // type or
+                            Node[itr].Cval = orOperation(Node, (Node[itr].Fin));
+                            break;
+                        case 5: // type Nor
+                            Node[itr].Cval = notOperation(orOperation(Node, (Node[itr].Fin)));
+                            break;
+                        case 6: // type xor
+                            Node[itr].Cval = xorOperation(Node, (Node[itr].Fin));
+                            break;
+                        case 7: // type xNor
+                            Node[itr].Cval = notOperation(xorOperation(Node, (Node[itr].Fin)));
+                            break;
+                    }
+                    if(Node[itr].Po == 1){
+                        outputNodes[pocount] = itr;                         
+                        //add primary output nodes to a list
+                        if(error == 1){
+                            int temp = Node[itr].Cval; //swap values once to add error
+                            Node[itr].Cval = temp;
+                            Node[itr].Cval = Node[itr].Fval;
+                            Node[itr].Fval = temp;
+                             
+                        }else{
+                            Node[itr].Fval = Node[itr].Cval; //maintain same value for error and error free
+                        }
+                        pocount = pocount + 1;
+               
+                    }
+                }
+        } 
+       
  }
 
 //end of simulateLogic
@@ -804,8 +917,8 @@ int andOperation(NODE * Node, LIST *Cur){
 	LIST *tmp=Cur;
 	int output=1;
 
-	while(tmp!=NULL){  
-		output = output & Node[tmp->id].Cval; // check output by two by two
+	while(tmp!=NULL){ 
+        output = andGate[output][Node[tmp->id].Cval]; // check output by two by two 
 		if(output == 0){ // if one pair give out as 0 then stop
 			break;
 		}
@@ -825,7 +938,7 @@ int orOperation(NODE * Node, LIST *Cur){
 
 
 	while(tmp!=NULL){   
-		output = output | Node[tmp->id].Cval; // check output by two by two
+		output = orGate[output][Node[tmp->id].Cval]; // check output by two by two
 		if(output == 1){ // if one pair give out as 1 then stop
 			break;
 		}
@@ -842,11 +955,26 @@ int orOperation(NODE * Node, LIST *Cur){
 ***************************************************************************************************/
 int xorOperation(NODE * Node, LIST *Cur){
 	LIST *tmp=Cur;
+    int one = 0;
 	int output=1;
  
-	if (Node[tmp->next->id].Cval == Node[tmp->id].Cval){ // check input value is equal or not
-		output = 0;
-	}
+	while(tmp!=NULL){   
+        if(Node[tmp->id].Cval == 1){
+            one = one + 1;
+        }else if(Node[tmp->id].Cval == 0){
+            continue;
+        }else{ // if xv
+            output = 2;
+            return output;
+        }        
+        tmp = tmp->next; 
+    } 
+    // check ones count is odd: output is 1
+    if(one % 2 == 1){
+        output = 1;
+    }else{
+        output = 0;
+    }    
 		
 	return output;
 }

@@ -44,6 +44,4 @@ int readTestFile( FILE* ftest, PatternData* patterns);
 void processTestfiles(char* fname,  int maxPat);
 void createTestPatterns(char* fname);
 void printTestPatternsPerFault(FILE* ftestPattern,PatternData* patterns,  int patternCount, int maxPat);
-void readPatternFile(FILE* fpat, int patternList[Mpt]);
-int isPatternInList(int pattern, int patternList[], int size);
-void FaultsSimulator(NODE* node, int max, int patternList[Mpt], FILE* res);
+
