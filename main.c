@@ -32,23 +32,24 @@ NODE graphDup[Mnod];
 fbench=fopen(argv[1],"r"); 
 Npo = 0;
 Max = readBench(fbench, graphB, &Npo);
+fclose(fbench);
 
 // printCircuit(graphB,Max); 
 
 
 //create a duplicate graph
-int oldToNewNodes[Max + 1];
-int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
+// int oldToNewNodes[Max + 1];
+// int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
 // // printCircuit(graphDup,count);
 
 char* fname[Mfnam];
-strncpy(fname, argv[2], Mfnam - 1);
-faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
+ strncpy(fname, argv[2], Mfnam - 1);
+// faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
 
-// //create fault file
-createFaultFile(count, fname);
-processBenchFiles(fname);
-createTestPatterns(fname);
+// // //create fault file
+// createFaultFile(count, fname);
+// processBenchFiles(fname);
+// createTestPatterns(fname);
 
 //read test patterns from the generated files
 //get random patterns file
@@ -69,12 +70,39 @@ fclose(fpat);
 char fresName[Mfnam]; // Buffer to store the file name
 sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
 fres = fopen(fresName, "w");
+printf("Start of Simulation\n");
 FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
+printf("End of fSimulation\n");
+
 fclose(fres);
+
+
+// FILE *ftest = fopen(fpatName, "r");
+// char frestlnName[Mfnam]; // Buffer to store the file name
+// sprintf(frestlnName, "%s/%s_rand%d.restln", fname, fname, randNum);
+// FILE *frestln = fopen(frestlnName, "w");
+// // readTestSetFile(ftest, fname, randNum, frestln);
+
+
+// char* faults[500][Mlin];
+
+// char* pattern = "01102";
+
+// int mfaults = 0;
+// mfaults =  extractPrimaryOutputsFaultList(fname, randNum, pattern, faults);
+// printf("mfaulsts: %d\n", mfaults);
+
+// int quarter = mfaults / 4;
+
+// pickRandomFaults(frestln, quarter, faults, mfaults, fname, randNum);
+
+// fclose(ftest);
+// fclose(frestln);
 
 clearCircuit(graph,Mnod);                                      //clear memeory for all members of graph
 //for(a=0;a<Total;a++){ bzero(vector[a].piv,Mpi); }                //clear memeory for all members of vector
-return;
+printf("End of Simulation\n");
+return ;
 }//end of main
 /****************************************************************************************************************************/
 

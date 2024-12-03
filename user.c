@@ -722,7 +722,6 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
     int j;
     int typesCount = 11;
     int errorDetected[max][Npo][typesCount]; //initialize the error detected array to 0
-
     //initialize the error detected array to 0
     for (i = 0; i < max; i++) {
         for (j = 0; j < Npo; j++) {
@@ -740,10 +739,8 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
         for (j = 0; j < Npo; j++) {
             outputNodes[j] = 0;
         }
-
         //run error free simulation
-        simulateLogic(node, Npo, patternList[i], max, res, outputNodes, 0);
-
+        simulateLogic(node, Npo, patternList[i], max, outputNodes, 0);
         
         //iterate through all nodes
         for (j = 1; j <= max; j++) {
@@ -757,11 +754,11 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
         }
 
         //print detected errors per pattern
-        printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
+        // printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
 
     }
 
-    
+    //  fclose(res);  
 }
 //end of FaultsSimulator
 
@@ -801,20 +798,26 @@ void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int Npo,
 
 void printErrorDetected(FILE* res, int max, int Npo, char pattern[Mlin],int outputNodes[Npo], int typesCount, int errorDetected[max][Npo][typesCount]) {
     int j,k,l;
-    fprintf(res, "pattern: %s\n", pattern);
+    printf("pattern:%s\n", pattern);
+    fprintf(res, "pattern:%s\n", pattern);
+  
         for (j = 0; j < Npo; j++) { //iterate through all primary outputs
             fprintf(res, "primary output node id: %d\n", outputNodes[j]);
+            printf("primary output node id: %d\n", outputNodes[j]);
+            fprintf(res, "fault type:fault node id\n");
+            printf("fault type:fault node id\n");
             for(l = 1; l <= max; l++){ //iterate through all nodes
                 for (k = 0; k < typesCount; k++) { //iterate through all fault types
                     char* type = typeToString(k);
                     if (errorDetected[l][j][k] == 1) {
-                        fprintf(res, "fault type: %s fault node id: %d\n", type, l);   
+                        fprintf(res, "%s%d\n", type, l);   
                     }
                 }
             
             }
             fprintf(res, "\n");
         }
+        printf("done\n");
 }
 
 void checkDetectedErrors(NODE* node, int max, int errorNodeId, int Npo, int typesCount,int outputNodes[Npo], int errorDetected[max][Npo][typesCount]) {
@@ -980,3 +983,392 @@ int xorOperation(NODE * Node, LIST *Cur){
 }
 //end of xorOperation
 /****************************************************************************************************************************/
+
+//extract the primary outputs fault lists for a pattern
+/***************************************************************************************************
+ Function to extract the primary outputs fault lists for patterns
+***************************************************************************************************/
+int extractPrimaryOutputsFaultList(char* fname, int groupSize, char pattern[groupSize][Mlin], char* faults[500][Mlin]) {
+    
+    char finCopyName[Mfnam]; // Buffer to store the file name
+    sprintf(finCopyName, "%s/%s_rand%d.copy", fname, fname, groupSize);
+ 
+    char finName[Mfnam]; // Buffer to store the file name
+    sprintf(finName, "%s/%s_rand%d.res", fname, fname, groupSize);
+   
+    FILE *fin = fopen(finName, "r");
+    FILE *fcopy = fopen(finCopyName, "w");
+
+    // printf("Extracting details for patterns\n");
+
+
+    char line[Mlin];
+    int writeBlock = 0;
+    int mfaults = 0;
+
+    while (fgets(line, sizeof(line), fin)) { // Iterate through the file line by line
+
+        if (strncmp(line, "pattern:", 8) == 0) { // Check for the start of a pattern block
+            writeBlock = 0; // Reset writing for a new block
+
+            int i;
+            for (i = 0; i < groupSize; i++) { // Check if this pattern matches any in the given group
+                // printf("pattern: %s\n", pattern[i]);
+                //pattern: 11021 is line need to extracted 11021
+                strcpy(line, line + 8); // Remove the "pattern: " prefix
+                
+                // printf("line: %s\n", line);
+                if (strstr(line, pattern[i])) {
+                    writeBlock = 1; // Start writing this block
+                    fprintf(fcopy, "%s", line); // Write the pattern line
+                    break;
+                }
+            }
+        } else if (writeBlock) { // Continue writing the current block
+            if (strncmp(line, "pattern:", 8) == 0) {
+                writeBlock = 0; // Stop writing when encountering the next pattern
+            } else {
+                fprintf(fcopy, "%s", line);
+                //create unique fault list
+                if (strstr(line, "fault type:fault node id") == NULL && strstr(line, "primary output node id") == NULL) {
+                    // printf("fault type:fault node id\n");
+                   //check fault in already in list 
+                    char trimmedfault[Mlin];
+                    strcpy(trimmedfault, line);
+                    trimmedfault[strcspn(trimmedfault, "\n")] = 0; // Remove the newline character
+                   if (!isFaultInList(trimmedfault, faults, 500)) {
+                        strcpy(faults[mfaults], trimmedfault);
+                        mfaults = mfaults + 1;
+                    }
+                }
+            }
+        }
+    }
+
+    fclose(fin);
+    fclose(fcopy);
+
+    printf("Details for patterns have been extracted\n");
+
+    return mfaults;
+}
+//end of extractPrimaryOutputsFaultList
+
+//check fault in already in fault list
+/***************************************************************************************************
+ Function to check if a fault is already in the fault list
+***************************************************************************************************/
+int isFaultInList(char* fault, char* faults[500][Mlin], int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        // printf("faulti: %s\n", faults[i]);
+        if (strcmp(fault, faults[i]) == 0) {
+            return 1; // Fault is already in the list
+        }
+    }
+    return 0;
+}
+
+//end of isFaultInList
+
+//get the intersection of marked faults and current faults block
+/***************************************************************************************************
+ Function to get the intersection of marked faults and current faults block
+***************************************************************************************************/
+
+int keepIntersection(char* markedFaults[500][Mlin], int markedCount, char* currentFaultsBlock[500][Mlin], int currentFaultsBlockCount) {
+    //iterate through marked faults and keep only the intersection of marked faults and current faults block
+    int i;
+    int newMarkedCount = 0;
+    for(i = 0; i < markedCount; i++){
+        int j;
+        for(j = 0; j < currentFaultsBlockCount; j++){
+            if(strcmp(markedFaults[i], currentFaultsBlock[j]) == 0){
+                //keep the fault in the marked faults list
+                strcpy(markedFaults[newMarkedCount], markedFaults[i]);
+                newMarkedCount = newMarkedCount + 1;
+                break;
+            }
+        }  
+    }
+    return newMarkedCount;
+}
+//end of getIntersection
+
+//remove the intersection of marked faults and unmarked faults
+/***************************************************************************************************
+ Function to remove the intersection of marked faults and unmarked faults
+***************************************************************************************************/
+
+int removeIntersection(char markedFaults[500][Mlin], int markedCount, char unmarkedFaults[500][Mlin], int unmarkedCount) {
+    //iterate through marked faults and remove the intersection of marked faults and unmarked faults
+    int i;
+    int newMarkedCount = 0;
+    for(i = 0; i < markedCount; i++){
+        int j;
+        
+        for(j = 0; j < unmarkedCount; j++){
+            printf("markedFault: %s unmarkedFaults: %s\n", markedFaults[i], unmarkedFaults[j]);
+           
+            if(strcmp(markedFaults[i], unmarkedFaults[j]) == 0){
+                //remove the fault from the marked faults list
+                
+                break;
+            }
+        }  
+        if(j == unmarkedCount){
+            //keep the fault in the marked faults list
+            // strcpy(markedFaults[newMarkedCount], markedFaults[i]);
+            newMarkedCount = newMarkedCount + 1;
+        }
+    }
+    return newMarkedCount;
+}
+//end of removeIntersection
+
+//process current faults block
+/***************************************************************************************************
+ Function to process current faults block
+***************************************************************************************************/
+// int processCurrentFaultsBlock(char* currentFaultsBlock[500][Mlin], int currentFaultsBlockCount, char* markedFaults[500][Mlin], int markedCount, char* unmarkedFaults[500][Mlin], int unmarkedCount) {
+//     //process current block
+//     if(marked){
+//         //add current fault block to marked faults
+//         int i;int j;
+//         //keep only the intersection of marked faults and current faults block in the marked faults list
+//         if(markedCount > 0){ //already has faults in marked list
+//             markedCount = keepIntersection(markedFaults, markedCount, currentFaultsBlock, currentFaultsBlockCount);
+//         }else{
+//             //add current fault block to marked faults
+//             for (i = 0; i < currentFaultsBlockCount; i++) {
+//                 strcpy(markedFaults[markedCount], currentFaultsBlock[i]);
+//                 markedCount = markedCount + 1;
+//             }
+//         }
+//         return markedCount;      
+//     }else{
+//         // add to unmarked faults unique faults //update current umarked list
+//         for (i = 0; i < currentFaultsBlockCount; i++) {
+//             if (!isFaultInList(currentFaultsBlock[i], unmarkedFaults, 500)) {
+//                 strcpy(unmarkedFaults[unmarkedCount], currentFaultsBlock[i]);
+//                 unmarkedCount = unmarkedCount + 1;
+//             }
+//         }
+        
+//         return unmarkedCount;
+//     }
+// }
+
+
+
+//maintain marked and unmarked fault list
+/***************************************************************************************************
+ Function to maintain marked and unmarked fault list
+***************************************************************************************************/
+int maintainMarkedUnmarkedFaultList(char* fault, char* fname, int groupSize){
+    //read the faults in copy file and maintain marked and unmarked fault list
+    char finCopyName[Mfnam]; // Buffer to store the file name
+    sprintf(finCopyName, "%s/%s_rand%d.copy", fname, fname, groupSize);
+    
+    FILE *fcopy = fopen(finCopyName, "r");
+
+    char line[Mlin];
+    int listBlock = 0;
+    char markedFaults[500][Mlin];
+    char unmarkedFaults[500][Mlin];
+    char currentFaultsBlock[500][Mlin];
+
+
+    int markedCount = 0;
+    int unmarkedCount = 0;
+    int currentFaultsBlockCount = 0;
+
+    int marked = 0;
+
+    while (fgets(line, sizeof(line), fcopy)) { // Iterate through the file line by line
+
+        // printf("line: %s\n", line);
+        // printf("marked: %d\n", marked);
+        
+          // Remove trailing newline
+        line[strcspn(line, "\n")] = '\0';
+        char* trimmedLine = line;
+
+        // if(trimmedLine == NULL){
+        //     continue;
+        // }
+
+        if(strstr(trimmedLine, "fault type:fault node id") != NULL){
+            printf("fault type:fault node id\n");
+            listBlock = 1;
+            continue;
+        }
+        if (listBlock ) { // Continue writing the current block
+            //if trimmed line is empty
+            // if (strncmp(trimmedLine, "primary output", 14) == 0) {
+
+            if (trimmedLine[0] == '\0') {
+                printf("currentFaultsBlockCount: %d\n", currentFaultsBlockCount);
+
+                //process current block
+                if(marked){
+                    //add current fault block to marked faults
+                    int i;int j;
+                    //keep only the intersection of marked faults and current faults block in the marked faults list
+                    if(markedCount > 0){ //already has faults in marked list
+                        markedCount = keepIntersection(markedFaults, markedCount, currentFaultsBlock, currentFaultsBlockCount);
+                    }else{
+                        //add current fault block to marked faults
+                        for (i = 0; i < currentFaultsBlockCount; i++) {
+                            strcpy(markedFaults[markedCount], currentFaultsBlock[i]);
+                            markedCount = markedCount + 1;
+                        }
+                    }      
+                }else{
+                    int i;
+                    // add to unmarked faults unique faults //update current umarked list
+                    for (i = 0; i < currentFaultsBlockCount; i++) {
+                    
+                        if (isFaultInList(currentFaultsBlock[i], unmarkedFaults, unmarkedCount)) {
+                            printf(currentFaultsBlock[i]);
+                            //print unmarked faults
+                            
+
+                        }
+
+                        if (!isFaultInList(currentFaultsBlock[i], unmarkedFaults, unmarkedCount)) {
+                            strcpy(unmarkedFaults[unmarkedCount], currentFaultsBlock[i]);
+                            unmarkedCount = unmarkedCount + 1;
+                        }
+                    }
+                    //check if there is any intersection between marked and unmarked faults in last only
+                }
+
+
+                listBlock = 0; //reset block
+                marked = 0; //reset marked
+                currentFaultsBlockCount = 0; //reset current fault block count
+                continue;
+            }else{
+                //check trimmed line is equal to fault
+                strcpy(currentFaultsBlock[currentFaultsBlockCount], trimmedLine);
+                currentFaultsBlockCount = currentFaultsBlockCount + 1; 
+                if (strcmp(trimmedLine, fault) == 0) { //marked list
+                    printf("marked\n");
+                    marked = 1;  
+                } 
+            }
+          
+        }
+
+    }
+
+    printf("Marked count: %d\n", markedCount);
+    printf("Unmarked count: %d\n", unmarkedCount);
+
+    //print unmarked faults
+    int i;
+    for (i = 0; i < unmarkedCount; i++) {
+        printf("Unmarked fault: %s\n", unmarkedFaults[i]);
+    }
+
+    //print marked faults
+    for (i = 0; i < markedCount; i++) {
+        printf("Marked fault: %s\n", markedFaults[i]);
+    }
+
+    //remove the intersection of marked faults and unmarked faults
+    markedCount = removeIntersection(markedFaults, markedCount, unmarkedFaults, unmarkedCount); //this is the resulution
+    printf("Marked count after removing intersection: %d\n", markedCount);
+    return markedCount;
+}
+
+//end of maintainMarkedUnmarkedFaultList
+
+/***************************************************************************************************
+ Function read test set file
+***************************************************************************************************/
+
+int readTestSetFile(FILE* ftest, char* fname, int groupSize,FILE* fresoultion){
+    char line[Mlin];
+    int tPt = 0; //total patterns
+    int i = 0;
+    char pattern[groupSize][Mlin];
+    printf("Reading test set file\n");
+    printf("Group size: %d\n", groupSize);
+    printf("File name: %s\n", fname);
+
+    while (fgets(line, Mlin, ftest)) {
+
+        //remove trailing newline
+        line[strcspn(line, "\n")] = 0;
+      
+        //add group size patterns to the array
+        if (line[0] == '\n') {
+            continue;
+        }
+        // if line has x replace it with 2
+        int j;
+        for (j = 0; j < strlen(line); j++) {
+            if (line[j] == 'x') {
+                line[j] = '2';
+            }
+        }
+        strcpy(pattern[i], line);
+        fprintf(fresoultion, "%s\n", line);
+        i = i + 1;
+    
+        if (i == groupSize) {
+            //process the group of patterns
+            char* faults[500][Mlin];
+            int mfaults = extractPrimaryOutputsFaultList(fname, groupSize, pattern, faults);
+
+            printf("mfaulsts: %d\n", mfaults);
+
+            //do this multiple times
+            if (mfaults == 0) {
+                i = 0;
+                continue;
+            }
+            int quarter = mfaults;
+            if(mfaults > 4){
+                quarter = mfaults / 4;
+            }
+            if (quarter > 500) {
+               // only do this for 500 faults
+                quarter = 500;
+               
+            }
+
+            printf("\nquarter: %d\n", quarter);
+            //iterate this for quarter times
+            fprintf(fresoultion, "Faults resolution\n");
+            pickRandomFaults(fresoultion, quarter, faults, mfaults, fname, groupSize);
+            fprintf(fresoultion, "\n");
+            i = 0;
+        }
+    } 
+}
+//end of readTestSetFile
+
+void pickRandomFaults(FILE* fresolution, int quarter, char* faults[500][Mlin], int mfaults, char* fname, int groupSize) {
+    int j;
+    for (j = 0; j < quarter; j++) {
+                //pick unique random fault from the list in each iteration
+                int randomIndex = rand() % mfaults;
+                char* fault = faults[randomIndex];
+                // char* fault = "AND10";
+                printf("fault: %s\n", fault);
+               
+                int resolution = maintainMarkedUnmarkedFaultList(fault, fname, groupSize);
+                printf("resolution: %d\n", resolution);
+
+                //write the resolution of the fault
+                fprintf(fresolution, "%s : %d\n", fault, resolution);
+
+                faults[randomIndex][Mlin] = faults[mfaults - 1][Mlin]; //swap the last element with the random index
+                mfaults = mfaults - 1;   //reduce the fault count by 1 remove the last element
+               
+    }
+}
+
