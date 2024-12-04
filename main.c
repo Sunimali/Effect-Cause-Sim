@@ -37,19 +37,19 @@ fclose(fbench);
 // printCircuit(graphB,Max); 
 
 
-//create a duplicate graph
-int oldToNewNodes[Max + 1];
-int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
-// // printCircuit(graphDup,count);
+// //create a duplicate graph
+// int oldToNewNodes[Max + 1];
+// int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
+// // // printCircuit(graphDup,count);
 
 char* fname[Mfnam];
- strncpy(fname, argv[2], Mfnam - 1);
-faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
+strncpy(fname, argv[2], Mfnam - 1);
+// faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
 
-// // //create fault file
-createFaultFile(count, fname);
-processBenchFiles(fname);
-createTestPatterns(fname);
+// // // // //create fault file
+// createFaultFile(count, fname);
+// processBenchFiles(fname);
+// createTestPatterns(fname);
 
 printf("End of Fault Injection\n");
 
@@ -71,12 +71,13 @@ FILE *fpat = fopen(fpatName, "r");
 int tPt = readPatternFile(fpat, patternList);
 fclose(fpat);
 
+printf("End of Reading Patterns\n");
 
 char* fresName[Mfnam]; // Buffer to store the file name
 sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
-// fres = fopen(fresName, "w");
-// FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
-// fclose(fres);
+fres = fopen(fresName, "w");
+FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
+fclose(fres);
 
 
 

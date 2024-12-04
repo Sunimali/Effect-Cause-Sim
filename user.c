@@ -490,7 +490,7 @@ void executeAltanta(char* fname, char* benchName) {
     //build the command to execute atlanta > /path/to/output_directory/output.test
     char command[256]; 
                     // /opt/net/apps/atalanta/atalanta 
-    snprintf(command, sizeof(command), "/opt/net/apps/atalanta/atalanta -D %d -f %s -t %s %s", MAX_PATTERNS,faultFile, outputFile, benchFile);
+    snprintf(command, sizeof(command), "/workspaces/Atalanta/atalanta -D %d -f %s -t %s %s", MAX_PATTERNS,faultFile, outputFile, benchFile);
     //pass the command to the system
     system(command);
 
@@ -732,9 +732,16 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
     int i;
     int j;
     int typesCount = 11;
-    int errorDetected[max][Npo][typesCount]; //initialize the error detected array to 0
+    // int errorDetected[max][Npo][typesCount]; //initialize the error detected array to 0
+    int (*errorDetected)[Npo][typesCount];
+    errorDetected = malloc((max+1) * sizeof(*errorDetected));
+    if (errorDetected == NULL) {
+        printf("Memory allocation failed!\n");
+        exit(1);
+    }
+
     //initialize the error detected array to 0
-    for (i = 0; i < max; i++) {
+    for (i = 1; i <= max; i++) {
         for (j = 0; j < Npo; j++) {
             int k;
             for (k = 0; k < typesCount; k++) {
@@ -760,7 +767,13 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
             } else if (node[j].Type == 0) { //skip unknown nodes
                 continue;
             } else {
+                if (j == 344){
+                    printf("j:%d\n", j);
+                }
+                // printf("j:%d\n", j);
+              
                 injectFaultToOriginalGraph(node, max, j, node[j].Type, Npo, typesCount,patternList[i], outputNodes, errorDetected);
+                
             }
         }
 
@@ -768,6 +781,7 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
         printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
 
     }
+    free(errorDetected);
 
     //  fclose(res);  
 }
@@ -798,7 +812,10 @@ void injectFaultToOriginalGraph(NODE* graph, int max,int i, int typeId, int Npo,
             if (type == types[j]){
                 continue;
             } else {
-                graph[i].Type = assignType(types[j]); // add error to the node     
+                graph[i].Type = assignType(types[j]); // add error to the node 
+                if(i == 344){
+                    printf("i: j%d%d\n", i, j); 
+                }   
                 simulateLogic(graph, Npo, pattern, max,  outputNodes,1);
                 checkDetectedErrors(graph,max, i, Npo, typesCount, outputNodes, errorDetected); //check detected errors
                 graph[i].Type = assignType(type); // change the gragh to error free
@@ -853,8 +870,13 @@ void checkDetectedErrors(NODE* node, int max, int errorNodeId, int Npo, int type
 		int itr ;
 		int curPatternIndex = 0;
         int pocount = 0;
+        // printf("simulateLogic\n");
         
             for(itr = 0; itr <= tGat; itr++){ 
+                // printf("itr:%d\n", itr);
+                if(itr == 344){
+                    // printf("itr:%d\n", itr);
+                }
                 if(Node[itr].Type != 0){  //not an invalid gate
                     switch(Node[itr].Type){
                         case 1: // type input
@@ -881,6 +903,9 @@ void checkDetectedErrors(NODE* node, int max, int errorNodeId, int Npo, int type
                             Node[itr].Cval = notOperation(orOperation(Node, (Node[itr].Fin)));
                             break;
                         case 6: // type xor
+                            if(itr == 344){
+                                // printf("itr:%d\n", itr);
+                            }
                             Node[itr].Cval = xorOperation(Node, (Node[itr].Fin));
                             break;
                         case 7: // type xNor
@@ -972,17 +997,22 @@ int xorOperation(NODE * Node, LIST *Cur){
     int one = 0;
 	int output=1;
  
-	while(tmp!=NULL){   
+	while(tmp!=NULL){
+        
+        // printf("start of while\n");   
         if(Node[tmp->id].Cval == 1){
             one = one + 1;
         }else if(Node[tmp->id].Cval == 0){
+            tmp = tmp->next; 
             continue;
         }else{ // if xv
             output = 2;
+            // printf("output:%d\n", output);
             return output;
         }        
         tmp = tmp->next; 
-    } 
+    }
+    // printf("end of while\n"); 
     // check ones count is odd: output is 1
     if(one % 2 == 1){
         output = 1;
@@ -999,7 +1029,7 @@ int xorOperation(NODE * Node, LIST *Cur){
 /***************************************************************************************************
  Function to extract the primary outputs fault lists for patterns
 ***************************************************************************************************/
-int extractPrimaryOutputsFaultList(char* fname, int groupSize, char pattern[groupSize][Mlin], char* faults[500][Mlin]) {
+int extractPrimaryOutputsFaultList(char* fname, int groupSize, char pattern[groupSize][Mlin], char* faults[1000][Mlin]) {
     
     char finCopyName[Mfnam]; // Buffer to store the file name
     sprintf(finCopyName, "%s/%s_rand%d.copy", fname, fname, groupSize);
@@ -1047,9 +1077,12 @@ int extractPrimaryOutputsFaultList(char* fname, int groupSize, char pattern[grou
                     char trimmedfault[Mlin];
                     strcpy(trimmedfault, line);
                     trimmedfault[strcspn(trimmedfault, "\n")] = 0; // Remove the newline character
-                   if (!isFaultInList(trimmedfault, faults, 500)) {
+                   if (!isFaultInList(trimmedfault, faults, mfaults)) {
                         strcpy(faults[mfaults], trimmedfault);
                         mfaults = mfaults + 1;
+                        if(mfaults == 1000){
+                            break;
+                        }
                     }
                 }
             }
@@ -1069,7 +1102,7 @@ int extractPrimaryOutputsFaultList(char* fname, int groupSize, char pattern[grou
 /***************************************************************************************************
  Function to check if a fault is already in the fault list
 ***************************************************************************************************/
-int isFaultInList(char* fault, char* faults[500][Mlin], int size) {
+int isFaultInList(char* fault, char* faults[1000][Mlin], int size) {
     int i;
     for (i = 0; i < size; i++) {
         // printf("faulti: %s\n", faults[i]);
@@ -1331,7 +1364,7 @@ int readTestSetFile(FILE* ftest, char* fname, int groupSize,FILE* fresoultion){
     
         if (i == groupSize) {
             //process the group of patterns
-            char* faults[500][Mlin];
+            char* faults[1000][Mlin];
             int mfaults = extractPrimaryOutputsFaultList(fname, groupSize, pattern, faults);
 
             printf("mfaulsts: %d\n", mfaults);
@@ -1376,6 +1409,7 @@ void pickRandomFaults(FILE* fresolution, int quarter, char* faults[500][Mlin], i
 
                 //write the resolution of the fault
                 fprintf(fresolution, "%s : %d\n", fault, resolution);
+                
 
                 faults[randomIndex][Mlin] = faults[mfaults - 1][Mlin]; //swap the last element with the random index
                 mfaults = mfaults - 1;   //reduce the fault count by 1 remove the last element
