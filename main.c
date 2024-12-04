@@ -38,18 +38,20 @@ fclose(fbench);
 
 
 //create a duplicate graph
-// int oldToNewNodes[Max + 1];
-// int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
+int oldToNewNodes[Max + 1];
+int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
 // // printCircuit(graphDup,count);
 
 char* fname[Mfnam];
  strncpy(fname, argv[2], Mfnam - 1);
-// faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
+faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
 
 // // //create fault file
-// createFaultFile(count, fname);
-// processBenchFiles(fname);
-// createTestPatterns(fname);
+createFaultFile(count, fname);
+processBenchFiles(fname);
+createTestPatterns(fname);
+
+printf("End of Fault Injection\n");
 
 //read test patterns from the generated files
 //get random patterns file
@@ -60,28 +62,29 @@ int patternList[Mpt][Mlin]; // Array to store the patterns
 char fpatName[Mfnam];           // Buffer to store the file name
 
     // Construct the file name using sprintf
+
 sprintf(fpatName, "%s/%s_rand%d.pattern",fname,fname, randNum);
 
     // Open the file
 FILE *fpat = fopen(fpatName, "r");
+    // Read the patterns from the file
 int tPt = readPatternFile(fpat, patternList);
 fclose(fpat);
 
-char fresName[Mfnam]; // Buffer to store the file name
-sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
-fres = fopen(fresName, "w");
-printf("Start of Simulation\n");
-FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
-printf("End of fSimulation\n");
 
-fclose(fres);
+char* fresName[Mfnam]; // Buffer to store the file name
+sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
+// fres = fopen(fresName, "w");
+// FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
+// fclose(fres);
+
 
 
 // FILE *ftest = fopen(fpatName, "r");
 // char frestlnName[Mfnam]; // Buffer to store the file name
 // sprintf(frestlnName, "%s/%s_rand%d.restln", fname, fname, randNum);
 // FILE *frestln = fopen(frestlnName, "w");
-// // readTestSetFile(ftest, fname, randNum, frestln);
+// readTestSetFile(ftest, fname, randNum, frestln);
 
 
 // char* faults[500][Mlin];

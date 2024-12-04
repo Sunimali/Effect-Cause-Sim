@@ -15,7 +15,7 @@ Header Files
 Constant Declarations 
 ****************************************************************************************************************************/
 // VARIOUS CONSTANTS
-#define Mfnam      256			// max size for a file name
+#define Mfnam      700			// max size for a file name
 #define Mnod    15000 		        // max number of nodes in a graph/node
 #define Mlin      500			// max size of characters in a line
 #define Mnam       25			// max size of a node name
@@ -24,7 +24,7 @@ Constant Declarations
 #define Min         9			// max node in degree (Nfi)
 #define Mpi       233			// max number of primary inputs
 #define Mpo       140			// max number of primary outputs
-#define Mpt       10			// max number of input patterns in .vec file
+#define Mpt       100			// max number of input patterns in .vec file
 #define Mft       10			// max number of stuck at faults in .faults file
 // NODE TYPE CONSTANTS 
 #define INPT 1				// Primary Input

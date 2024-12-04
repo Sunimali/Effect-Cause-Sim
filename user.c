@@ -602,6 +602,7 @@ void processTestfiles(char* fname,  int maxPat){
                     continue;
                 }else{
                     printTestPatternsPerFault(ftestPattern, pattern, patternCount, maxPat);
+                    fprintf(ftestPattern, "\n");
                     itr = itr + 1;
                 }    
                 
@@ -682,6 +683,15 @@ int readPatternFile(FILE* fpat,  char patternList[Mpt][Mlin]) {
     int i = 0;
     while (fgets(line, Mlin, fpat)) {
         int j;
+
+        //continue if the line is empty
+        if (line[0] == '\n') {
+            continue;
+        }
+        
+        //remove the new line character
+        line[strcspn(line, "\n")] = 0;
+        
         //replace x values with 2 in line
         for (j = 0; j < strlen(line); j++) {
             if (line[j] == 'x') {
@@ -689,7 +699,8 @@ int readPatternFile(FILE* fpat,  char patternList[Mpt][Mlin]) {
             }
         }
 
-        
+    
+
         if (!isPatternInList(line, patternList, i)) {
             tPt = tPt + 1;
             strcpy(patternList[i], line);
@@ -754,7 +765,7 @@ void FaultsSimulator(NODE* node, int max, int tPt, int Npo,  char patternList[Mp
         }
 
         //print detected errors per pattern
-        // printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
+        printErrorDetected(res, max, Npo, patternList[i], outputNodes, typesCount, errorDetected);
 
     }
 
@@ -1339,8 +1350,8 @@ int readTestSetFile(FILE* ftest, char* fname, int groupSize,FILE* fresoultion){
                 quarter = 500;
                
             }
-
-            printf("\nquarter: %d\n", quarter);
+            fprintf(fresoultion, "\n");
+            printf("quarter: %d\n", quarter);
             //iterate this for quarter times
             fprintf(fresoultion, "Faults resolution\n");
             pickRandomFaults(fresoultion, quarter, faults, mfaults, fname, groupSize);
