@@ -10,102 +10,90 @@ FILE *fisc,*fvec,*ffau,*fres,*fbench,*fbenchout;             //file pointers use
 int Max,Opt,Npi,Npo,Total,Tfs;              //maxnode id,option,tot no of PIs,tot no of Pos,Tot no of input patterns& faults in.vec in.faults
 
 NODE graph[Mnod]; 
-                        //structure used to store the ckt information in .isc file 
-//PATTERN vector[Mpt];                      //structure used to store the input vectors information in .vec file 
-
-//FAULT stuck[Mft];                      //structure used to store the faults information in .faults file
 int a,b,c,d;                             //random variables
 NODE graphB[Mnod]; 
 NODE graphDup[Mnod]; 
 
-//Read the .isc file and store the information in graph structure
-// fisc=fopen(argv[1],"r");                           //file pointer to open .isc file 
-// Max=0; 
-// Max=readIsc(fisc,graph);                 //read .isc file and return index of last node in graph formed
-// fclose(fisc);                            //close file pointer for .isc file
-// printCircuit(graph,Max);  
-               //print all members of graph structure
 
-//Read the .vec file and store the information in  vector structure
-
-
-fbench=fopen(argv[1],"r"); 
+//POJECT PART 1
+char* fname[Mfnam];
+strncpy(fname, argv[1], Mfnam - 1); 
 Npo = 0;
+char* fbenchName[Mfnam];
+sprintf(fbenchName, "%s.bench", fname);
+fbench = fopen(fbenchName, "r");
 Max = readBench(fbench, graphB, &Npo);
 fclose(fbench);
 
 // printCircuit(graphB,Max); 
 
-
-// //create a duplicate graph
 // int oldToNewNodes[Max + 1];
-// int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes);
+// int count = createDuplicateGraph(graphB, graphDup, Max, oldToNewNodes); //create a duplicate graph
 // // // printCircuit(graphDup,count);
 
-char* fname[Mfnam];
-strncpy(fname, argv[2], Mfnam - 1);
+// char* fname[Mfnam];
+// strncpy(fname, argv[2], Mfnam - 1);
 // faultInjectionToDuplicate(graphDup, graph, count, Max,oldToNewNodes, fname);
 
-// // // // //create fault file
-// createFaultFile(count, fname);
+// createFaultFile(count, fname); //create fault file
 // processBenchFiles(fname);
 // createTestPatterns(fname);
 
-printf("End of Fault Injection\n");
+printf("Done project part 1\n");
 
+
+//PROJECT PART 2
 //read test patterns from the generated files
 //get random patterns file
 
+int groupsizes = 4;
+int groupSize = 1;
  
-int randNum = atoi(argv[3]); // Convert the argument to an integer
-int patternList[Mpt][Mlin]; // Array to store the patterns
-char fpatName[Mfnam];           // Buffer to store the file name
+// int randNum = atoi(argv[3]); // Convert the argument to an integer
 
-    // Construct the file name using sprintf
+for (groupSize = 1; groupSize <= groupsizes; groupSize++) {
+    
+    int patternList[Mpt][Mlin]; // Array to store the patterns
+    char fpatName[Mfnam];           // Buffer to store the file name
 
-sprintf(fpatName, "%s/%s_rand%d.pattern",fname,fname, randNum);
+    sprintf(fpatName, "%s/%s_rand%d.pattern",fname,fname, groupSize);
 
-    // Open the file
-FILE *fpat = fopen(fpatName, "r");
-    // Read the patterns from the file
-int tPt = readPatternFile(fpat, patternList);
-fclose(fpat);
-
-printf("End of Reading Patterns\n");
-
-char* fresName[Mfnam]; // Buffer to store the file name
-sprintf(fresName, "%s/%s_rand%d.res", fname, fname, randNum);
-fres = fopen(fresName, "w");
-FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres);
-fclose(fres);
+  
+    // FILE *fpat = fopen(fpatName, "r"); 
+    // int tPt = readPatternFile(fpat, patternList);  // Read the patterns from the file
+    // fclose(fpat);
 
 
+    // char* fresName[Mfnam]; // Buffer to store the file name
+    // sprintf(fresName, "%s/%s_rand%d.res", fname, fname, groupSize);
+    // fres = fopen(fresName, "w");
+    // FaultsSimulator(graphB, Max, tPt, Npo, patternList, fres); // Simulate the faults
+    // fclose(fres);
+}
 
-// FILE *ftest = fopen(fpatName, "r");
-// char frestlnName[Mfnam]; // Buffer to store the file name
-// sprintf(frestlnName, "%s/%s_rand%d.restln", fname, fname, randNum);
-// FILE *frestln = fopen(frestlnName, "w");
-// readTestSetFile(ftest, fname, randNum, frestln);
+printf("Done project part 2\n");
+
+//PROJECT PART 3
+for(groupSize = 1; groupSize <= groupsizes; groupSize++){
+    char fpatName[Mfnam]; // Buffer to store the file name
+    sprintf(fpatName, "%s/%s_rand%d.pattern", fname, fname, groupSize);
+  
+    FILE *ftest = fopen(fpatName, "r");
+    char frestlnName[Mfnam]; // Buffer to store the file name
+    sprintf(frestlnName, "%s/%s_rand%d.restln", fname, fname, groupSize);
+    FILE *frestln = fopen(frestlnName, "w");
+    readTestSetFile(ftest, fname, groupSize, frestln);
 
 
-// char* faults[500][Mlin];
+    fclose(ftest);
+    fclose(frestln);
+}
 
-// char* pattern = "01102";
+printf("Done project part 3\n");
 
-// int mfaults = 0;
-// mfaults =  extractPrimaryOutputsFaultList(fname, randNum, pattern, faults);
-// printf("mfaulsts: %d\n", mfaults);
+clearCircuit(graph,Mnod);                                    //clear memeory for all members of graph
+clearCircuit(graphB,Mnod);                                    //clear memeory for all members of graphB
 
-// int quarter = mfaults / 4;
-
-// pickRandomFaults(frestln, quarter, faults, mfaults, fname, randNum);
-
-// fclose(ftest);
-// fclose(frestln);
-
-clearCircuit(graph,Mnod);                                      //clear memeory for all members of graph
-//for(a=0;a<Total;a++){ bzero(vector[a].piv,Mpi); }                //clear memeory for all members of vector
-printf("End of Simulation\n");
 return ;
 }//end of main
 /****************************************************************************************************************************/

@@ -17,6 +17,7 @@ Header Files
  * ****************************************************************************************************************************/
 #define MAX_PATTERNS 100
 #define MAX_RND_PATTERNS 500
+#define MAX_ENTRIES 2000
 
 typedef struct {
     char pattern[Mlin];
